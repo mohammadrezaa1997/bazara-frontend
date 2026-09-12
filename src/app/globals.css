@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --nv-bg: #f4f7fb;
+  --nv-panel: #ffffff;
+  --nv-panel-raised: #ffffff;
+  --nv-soft: #eef3f8;
+  --nv-soft-strong: #e4ebf3;
+  --nv-text: #111827;
+  --nv-text-soft: #334155;
+  --nv-muted: #64748b;
+  --nv-faint: #94a3b8;
+  --nv-border: rgba(15, 23, 42, 0.11);
+  --nv-border-strong: rgba(15, 23, 42, 0.18);
+  --nv-overlay: rgba(255, 255, 255, 0.88);
+  --nv-shadow: 0 22px 65px rgba(15, 23, 42, 0.08);
+}
+
+.dark {
+  color-scheme: dark;
+  --nv-bg: #070a0f;
+  --nv-panel: #0b1119;
+  --nv-panel-raised: #0e1621;
+  --nv-soft: rgba(255, 255, 255, 0.045);
+  --nv-soft-strong: rgba(255, 255, 255, 0.075);
+  --nv-text: #f8fafc;
+  --nv-text-soft: #dbe5f1;
+  --nv-muted: #94a3b8;
+  --nv-faint: #64748b;
+  --nv-border: rgba(255, 255, 255, 0.08);
+  --nv-border-strong: rgba(255, 255, 255, 0.14);
+  --nv-overlay: rgba(7, 10, 15, 0.9);
+  --nv-shadow: 0 24px 75px rgba(0, 0, 0, 0.3);
+}
+
+@theme inline {
+  --color-background: var(--nv-bg);
+  --color-foreground: var(--nv-text);
+  --font-sans: "Vazirmatn Variable", Vazirmatn, Tahoma, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--nv-bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--nv-bg);
+  color: var(--nv-text);
+  font-family: "Vazirmatn Variable", Vazirmatn, Tahoma, Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(6, 182, 212, 0.25);
+}
+
+.nv-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.45) transparent;
+}
+
+.nv-scrollbar::-webkit-scrollbar {
+  height: 5px;
+  width: 5px;
+}
+
+.nv-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.45);
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
