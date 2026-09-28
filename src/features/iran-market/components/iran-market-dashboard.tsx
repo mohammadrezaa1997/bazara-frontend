@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowLeft, BrainCircuit, Loader2, Radar } from 'lucide-r
 
 import { iranMarketApi } from '../api/client';
 import {
+  useCompositeAnalysis,
   useIranMarketAssets,
   useIranMarketOverview,
   useIranMarketPriceHistory,
@@ -46,6 +47,7 @@ export function IranMarketDashboard() {
     symbol: selectedSymbol,
     limit: 100,
   });
+  const analysisQuery = useCompositeAnalysis(selectedSymbol);
 
   const assets = useMemo(() => assetsQuery.data ?? [], [assetsQuery.data]);
   const featuredAssets = featuredAssetQueries.flatMap((query) =>
@@ -154,6 +156,7 @@ export function IranMarketDashboard() {
               <MarketChart
                 asset={selectedAsset}
                 prices={historyQuery.data ?? []}
+                analysis={analysisQuery.data}
                 isLoading={historyQuery.isLoading || historyQuery.isFetching}
               />
             </div>

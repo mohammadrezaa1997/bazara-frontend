@@ -28,17 +28,8 @@ import {
   TrendingUp,
   WalletCards,
 } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-
 import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { CryptoProfessionalChart } from '@/features/crypto/components/crypto-professional-chart';
 import { FinancialAssistant } from '@/features/financial-assistant/financial-assistant';
 import api from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
@@ -130,40 +121,6 @@ interface ApiError {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                Chart Data                                  */
-/* -------------------------------------------------------------------------- */
-
-const CHART_DATA_BY_ASSET: Record<
-  'BTC' | 'ETH' | 'SOL',
-  { time: string; price: number }[]
-> = {
-  BTC: [
-    { time: '00:00', price: 63200 },
-    { time: '04:00', price: 63800 },
-    { time: '08:00', price: 62900 },
-    { time: '12:00', price: 64100 },
-    { time: '16:00', price: 63700 },
-    { time: '20:00', price: 64850 },
-  ],
-  ETH: [
-    { time: '00:00', price: 3410 },
-    { time: '04:00', price: 3450 },
-    { time: '08:00', price: 3420 },
-    { time: '12:00', price: 3490 },
-    { time: '16:00', price: 3470 },
-    { time: '20:00', price: 3520 },
-  ],
-  SOL: [
-    { time: '00:00', price: 138.5 },
-    { time: '04:00', price: 141.2 },
-    { time: '08:00', price: 139 },
-    { time: '12:00', price: 144.8 },
-    { time: '16:00', price: 143.5 },
-    { time: '20:00', price: 148.2 },
-  ],
-};
-
-/* -------------------------------------------------------------------------- */
 /*                              Helper Functions                              */
 /* -------------------------------------------------------------------------- */
 
@@ -195,11 +152,8 @@ function getPortfolioErrorMessage(error: ApiError): string {
   );
 }
 
-
 function normalizeSignalAction(item: PortfolioItem): SignalAction {
-  const rawAction = String(
-    item.action || item.recommendation || ''
-  )
+  const rawAction = String(item.action || item.recommendation || '')
     .trim()
     .toUpperCase();
 
@@ -224,44 +178,36 @@ function getSignalMeta(action: SignalAction) {
       return {
         label: 'خرید پله‌ای',
         icon: CheckCircle2,
-        badge:
-          'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-        panel:
-          'border-emerald-500/20 bg-emerald-500/[0.06]',
+        badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+        panel: 'border-emerald-500/20 bg-emerald-500/[0.06]',
       };
     case 'HOLD':
       return {
         label: 'نگهداری',
         icon: Clock3,
-        badge:
-          'border-blue-500/30 bg-blue-500/10 text-blue-300',
+        badge: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
         panel: 'border-blue-500/20 bg-blue-500/[0.06]',
       };
     case 'SELL':
       return {
         label: 'کاهش موقعیت',
         icon: TrendingDown,
-        badge:
-          'border-rose-500/30 bg-rose-500/10 text-rose-300',
+        badge: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
         panel: 'border-rose-500/20 bg-rose-500/[0.06]',
       };
     case 'AVOID':
       return {
         label: 'عدم ورود',
         icon: AlertTriangle,
-        badge:
-          'border-amber-500/30 bg-amber-500/10 text-amber-300',
-        panel:
-          'border-amber-500/20 bg-amber-500/[0.06]',
+        badge: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+        panel: 'border-amber-500/20 bg-amber-500/[0.06]',
       };
     default:
       return {
         label: 'زیر نظر',
         icon: Minus,
-        badge:
-          'border-slate-500/30 bg-slate-500/10 text-[var(--nv-text-soft)]',
-        panel:
-          'border-slate-500/20 bg-slate-500/[0.06]',
+        badge: 'border-slate-500/30 bg-slate-500/10 text-[var(--nv-text-soft)]',
+        panel: 'border-slate-500/20 bg-slate-500/[0.06]',
       };
   }
 }
@@ -283,12 +229,15 @@ function formatNumber(value?: number | string): string {
 }
 
 function formatDateTime(value?: string | null): string {
-  if (!value) return "تعیین نشده";
+  if (!value) return 'تعیین نشده';
+
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "تعیین نشده";
-  return parsed.toLocaleString("fa-IR", {
-    dateStyle: "medium",
-    timeStyle: "short",
+
+  if (Number.isNaN(parsed.getTime())) return 'تعیین نشده';
+
+  return parsed.toLocaleString('fa-IR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
   });
 }
 
@@ -302,16 +251,14 @@ function getEntryZone(item: PortfolioItem): string {
     item.entry_price_max !== undefined
   ) {
     return `${formatNumber(item.entry_price_min)} تا ${formatNumber(
-      item.entry_price_max
+      item.entry_price_max,
     )} USDT`;
   }
 
   return 'هنوز توسط بک‌اند محاسبه نشده';
 }
 
-function getTargets(
-  targets?: Array<number | string> | string
-): string {
+function getTargets(targets?: Array<number | string> | string): string {
   if (!targets) {
     return 'هنوز توسط بک‌اند محاسبه نشده';
   }
@@ -352,15 +299,16 @@ export default function DashboardPage() {
     setProfileComplete,
   } = useAuthStore();
 
-  const [selectedChartAsset, setSelectedChartAsset] =
-    useState<'BTC' | 'ETH' | 'SOL'>('BTC');
+  const [selectedChartAsset, setSelectedChartAsset] = useState<
+    'BTC' | 'ETH' | 'SOL'
+  >('BTC');
 
-  const [cryptoPrices, setCryptoPrices] = useState<
-    Record<string, CryptoPriceData> | null
-  >(null);
+  const [cryptoPrices, setCryptoPrices] = useState<Record<
+    string,
+    CryptoPriceData
+  > | null>(null);
 
-  const [usdtTomanPrice, setUsdtTomanPrice] =
-    useState<number | null>(null);
+  const [usdtTomanPrice, setUsdtTomanPrice] = useState<number | null>(null);
 
   /* ------------------------------------------------------------------------ */
   /*                           دریافت قیمت‌های زنده                           */
@@ -376,13 +324,10 @@ export default function DashboardPage() {
         });
 
         if (!response.ok) {
-          throw new Error(
-            `Price API returned ${response.status}`
-          );
+          throw new Error(`Price API returned ${response.status}`);
         }
 
-        const data: PriceApiResponse =
-          await response.json();
+        const data: PriceApiResponse = await response.json();
 
         if (!isMounted || !data.success) {
           return;
@@ -393,30 +338,20 @@ export default function DashboardPage() {
         }
 
         if (data.usdt?.lastTradePrice) {
-          const rialPrice = Number(
-            data.usdt.lastTradePrice
-          );
+          const rialPrice = Number(data.usdt.lastTradePrice);
 
           if (Number.isFinite(rialPrice)) {
-            setUsdtTomanPrice(
-              Math.round(rialPrice / 10)
-            );
+            setUsdtTomanPrice(Math.round(rialPrice / 10));
           }
         }
       } catch (error) {
-        console.error(
-          'Live prices fetch error:',
-          error
-        );
+        console.error('Live prices fetch error:', error);
       }
     };
 
     fetchLivePrices();
 
-    const intervalId = window.setInterval(
-      fetchLivePrices,
-      60000
-    );
+    const intervalId = window.setInterval(fetchLivePrices, 60000);
 
     return () => {
       isMounted = false;
@@ -437,10 +372,9 @@ export default function DashboardPage() {
     queryKey: ['user-psych-profile'],
 
     queryFn: async () => {
-      const { data } =
-        await api.get<ProfileResponse>(
-          '/api/questionnaire/profile/'
-        );
+      const { data } = await api.get<ProfileResponse>(
+        '/api/questionnaire/profile/',
+      );
 
       return data;
     },
@@ -455,43 +389,32 @@ export default function DashboardPage() {
       try {
         const result = await refetchProfile();
 
-        if (
-          result.data?.is_profile_complete &&
-          result.data.profile
-        ) {
+        if (result.data?.is_profile_complete && result.data.profile) {
           const profile = result.data.profile;
 
           updateUserStats(
             Number(profile.budget_amount),
             profile.risk_profile,
             Number(profile.overall_risk_score),
-            profile.investment_horizon
+            profile.investment_horizon,
           );
 
           setProfileComplete(true);
         }
       } catch (error) {
-        console.error(
-          'Profile synchronization error:',
-          error
-        );
+        console.error('Profile synchronization error:', error);
       }
     };
 
     loadProfileIntoStore();
-  }, [
-    refetchProfile,
-    setProfileComplete,
-    updateUserStats,
-  ]);
+  }, [refetchProfile, setProfileComplete, updateUserStats]);
 
   useEffect(() => {
     if (!isProfileError) {
       return;
     }
 
-    const statusCode =
-      profileError?.response?.status;
+    const statusCode = profileError?.response?.status;
 
     if (statusCode === 404) {
       setProfileComplete(false);
@@ -503,13 +426,7 @@ export default function DashboardPage() {
       logout();
       router.replace('/');
     }
-  }, [
-    isProfileError,
-    logout,
-    profileError,
-    router,
-    setProfileComplete,
-  ]);
+  }, [isProfileError, logout, profileError, router, setProfileComplete]);
 
   /* ------------------------------------------------------------------------ */
   /*                         دریافت سیگنال‌های پورتفو                         */
@@ -526,10 +443,9 @@ export default function DashboardPage() {
     queryKey: ['portfolio'],
 
     queryFn: async () => {
-      const { data } =
-        await api.get<PortfolioResponse>(
-          '/api/market/portfolio/'
-        );
+      const { data } = await api.get<PortfolioResponse>(
+        '/api/market/portfolio/',
+      );
 
       return data;
     },
@@ -607,10 +523,7 @@ export default function DashboardPage() {
   /* ------------------------------------------------------------------------ */
 
   return (
-    <div
-      dir="rtl"
-      className="nv-page font-sans selection:bg-cyan-500/30"
-    >
+    <div dir="rtl" className="nv-page font-sans selection:bg-cyan-500/30">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[var(--nv-border)] bg-[var(--nv-header)] shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-3 px-3 sm:min-h-20 sm:px-6 lg:px-10">
@@ -635,21 +548,33 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <div className="hidden md:block"><ThemeToggle /></div>
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
+
             <button
               type="button"
               onClick={() => router.push('/iran-market')}
               className="flex min-h-10 items-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 text-xs font-bold text-cyan-600 transition-all duration-300 hover:bg-cyan-500/15 sm:px-4 dark:text-cyan-300"
             >
               <BarChart3 className="h-4 w-4" />
+
               <span className="hidden min-[430px]:inline">بازار ایران</span>
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                router.push('/onboarding')
-              }
+              onClick={() => router.push('/forex')}
+              className="flex min-h-10 items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3 text-xs font-bold text-violet-600 transition-all duration-300 hover:bg-violet-500/15 sm:px-4 dark:text-violet-300"
+            >
+              <Coins className="h-4 w-4" />
+
+              <span className="hidden min-[520px]:inline">فارکس</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push('/onboarding')}
               className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-panel)] px-3 text-xs transition-all duration-300 hover:border-cyan-500/25 sm:px-4"
             >
               <ClipboardList className="h-4 w-4 text-cyan-400" />
@@ -684,40 +609,25 @@ export default function DashboardPage() {
 
               <span className="relative inline-flex h-3 w-3 rounded-full bg-cyan-500" />
             </span>
-
             بازار زنده
           </div>
 
           <div className="flex items-center gap-2 rounded-full border border-[var(--nv-border)] bg-[var(--nv-soft)] px-4 py-1.5 text-xs shadow-inner">
-            <span className="text-[var(--nv-muted)]">
-              تتر:
-            </span>
+            <span className="text-[var(--nv-muted)]">تتر:</span>
 
-            <span
-              dir="ltr"
-              className="font-bold text-amber-400"
-            >
-              {usdtTomanPrice
-                ? `${usdtTomanPrice.toLocaleString()} T`
-                : '...'}
+            <span dir="ltr" className="font-bold text-amber-400">
+              {usdtTomanPrice ? `${usdtTomanPrice.toLocaleString()} T` : '...'}
             </span>
           </div>
 
           <div className="flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-xs">
             <Coins className="h-4 w-4 text-amber-400" />
 
-            <span className="text-amber-200/80">
-              انس طلا:
-            </span>
+            <span className="text-amber-200/80">انس طلا:</span>
 
-            <span
-              dir="ltr"
-              className="font-bold text-[var(--nv-text)]"
-            >
+            <span dir="ltr" className="font-bold text-[var(--nv-text)]">
               {cryptoPrices?.['pax-gold']
-                ? `$${cryptoPrices[
-                  'pax-gold'
-                ].usd.toLocaleString()}`
+                ? `$${cryptoPrices['pax-gold'].usd.toLocaleString()}`
                 : '...'}
             </span>
           </div>
@@ -742,31 +652,24 @@ export default function DashboardPage() {
               return null;
             }
 
-            const isPositive =
-              coinData.usd_24h_change >= 0;
+            const isPositive = coinData.usd_24h_change >= 0;
 
             return (
               <div
                 key={key}
                 className="flex items-center gap-2 rounded-full border border-[var(--nv-border)] bg-[var(--nv-soft)] px-4 py-1.5 text-xs"
               >
-                <span className="text-[var(--nv-muted)]">
-                  {symbol}/USDT:
-                </span>
+                <span className="text-[var(--nv-muted)]">{symbol}/USDT:</span>
 
-                <span
-                  dir="ltr"
-                  className="font-bold text-[var(--nv-text)]"
-                >
+                <span dir="ltr" className="font-bold text-[var(--nv-text)]">
                   ${coinData.usd.toLocaleString()}
                 </span>
 
                 <span
                   dir="ltr"
-                  className={`flex items-center text-[11px] font-bold ${isPositive
-                      ? 'text-emerald-400'
-                      : 'text-rose-400'
-                    }`}
+                  className={`flex items-center text-[11px] font-bold ${
+                    isPositive ? 'text-emerald-400' : 'text-rose-400'
+                  }`}
                 >
                   {isPositive ? (
                     <TrendingUp className="mr-1 h-3 w-3" />
@@ -774,10 +677,7 @@ export default function DashboardPage() {
                     <TrendingDown className="mr-1 h-3 w-3" />
                   )}
 
-                  {coinData.usd_24h_change.toFixed(
-                    2
-                  )}
-                  %
+                  {coinData.usd_24h_change.toFixed(2)}%
                 </span>
               </div>
             );
@@ -795,8 +695,7 @@ export default function DashboardPage() {
               </p>
 
               <h4 className="text-xl font-black text-[var(--nv-text)]">
-                {riskProfile ||
-                  'در حال ارزیابی...'}
+                {riskProfile || 'در حال ارزیابی...'}
               </h4>
             </div>
 
@@ -807,18 +706,14 @@ export default function DashboardPage() {
 
           <div className="group min-w-0 rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-4 shadow-[var(--nv-shadow)] transition-all duration-300 sm:flex sm:items-center sm:justify-between sm:p-5 sm:hover:-translate-y-1">
             <div>
-              <p className="mb-1 text-xs text-[var(--nv-muted)]">
-                امتیاز ریسک
-              </p>
+              <p className="mb-1 text-xs text-[var(--nv-muted)]">امتیاز ریسک</p>
 
               <h4
                 dir="ltr"
                 className="text-right text-xl font-black text-[var(--nv-text)]"
               >
                 {overallRiskScore !== null
-                  ? `${Number(
-                    overallRiskScore
-                  ).toFixed(1)} / 100`
+                  ? `${Number(overallRiskScore).toFixed(1)} / 100`
                   : '---'}
               </h4>
             </div>
@@ -838,10 +733,7 @@ export default function DashboardPage() {
                 dir="ltr"
                 className="text-right text-xl font-black text-[var(--nv-text)]"
               >
-                {budget > 0
-                  ? budget.toLocaleString()
-                  : '0'}{' '}
-                USDT
+                {budget > 0 ? budget.toLocaleString() : '0'} USDT
               </h4>
             </div>
 
@@ -882,26 +774,16 @@ export default function DashboardPage() {
                 dir="ltr"
                 className="flex gap-2 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] p-1"
               >
-                {(
-                  [
-                    'BTC',
-                    'ETH',
-                    'SOL',
-                  ] as const
-                ).map((asset) => (
+                {(['BTC', 'ETH', 'SOL'] as const).map((asset) => (
                   <button
                     key={asset}
                     type="button"
-                    onClick={() =>
-                      setSelectedChartAsset(
-                        asset
-                      )
-                    }
-                    className={`rounded-lg px-6 py-2 text-sm font-bold transition-all duration-300 ${selectedChartAsset ===
-                        asset
+                    onClick={() => setSelectedChartAsset(asset)}
+                    className={`rounded-lg px-6 py-2 text-sm font-bold transition-all duration-300 ${
+                      selectedChartAsset === asset
                         ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]'
                         : 'text-[var(--nv-muted)] hover:bg-[var(--nv-soft)] hover:text-[var(--nv-text)]'
-                      }`}
+                    }`}
                   >
                     {asset}
                   </button>
@@ -909,105 +791,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div
-              dir="ltr"
-              className="h-72 w-full"
-            >
-              <ResponsiveContainer
-                width="100%"
-                height="100%"
-              >
-                <AreaChart
-                  data={
-                    CHART_DATA_BY_ASSET[
-                    selectedChartAsset
-                    ]
-                  }
-                >
-                  <defs>
-                    <linearGradient
-                      id="colorPrice"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="#0ea5e9"
-                        stopOpacity={0.5}
-                      />
-
-                      <stop
-                        offset="95%"
-                        stopColor="#0ea5e9"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#ffffff10"
-                    vertical={false}
-                  />
-
-                  <XAxis
-                    dataKey="time"
-                    stroke="#64748b"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    dy={10}
-                  />
-
-                  <YAxis
-                    stroke="#64748b"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    dx={-10}
-                    domain={[
-                      'dataMin - 5',
-                      'dataMax + 5',
-                    ]}
-                  />
-
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor:
-                        'rgba(15, 23, 42, 0.9)',
-                      borderColor:
-                        'rgba(255,255,255,0.1)',
-                      borderRadius: '12px',
-                      backdropFilter:
-                        'blur(8px)',
-                    }}
-                    itemStyle={{
-                      color: '#0ea5e9',
-                      fontWeight: 'bold',
-                    }}
-                  />
-
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#0ea5e9"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorPrice)"
-                    activeDot={{
-                      r: 6,
-                      fill: '#0ea5e9',
-                      stroke: '#fff',
-                      strokeWidth: 2,
-                    }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <CryptoProfessionalChart symbol={selectedChartAsset} />
           </section>
-
         </div>
 
         {/* General Iran-market and crypto conversational assistant */}
@@ -1023,15 +808,18 @@ export default function DashboardPage() {
               </h2>
 
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--nv-muted)]">
-                هر کارت باید مشخص کند دارایی صرفاً زیر نظر باشد، خرید
-                پله‌ای انجام شود، نگهداری شود یا ورود به آن مناسب نیست.
-                محدوده ورود، حد ضرر و اهداف تنها زمانی نمایش داده می‌شوند
-                که بک‌اند آن‌ها را به‌صورت عددی و ساختاریافته محاسبه کرده باشد.
+                هر کارت باید مشخص کند دارایی صرفاً زیر نظر باشد، خرید پله‌ای
+                انجام شود، نگهداری شود یا ورود به آن مناسب نیست. محدوده ورود،
+                حد ضرر و اهداف تنها زمانی نمایش داده می‌شوند که بک‌اند آن‌ها را
+                به‌صورت عددی و ساختاریافته محاسبه کرده باشد.
               </p>
+
               {portfolioData?.portfolio_meta ? (
                 <p className="mt-2 text-xs leading-6 text-cyan-300">
-                  بازبینی بعدی: {formatDateTime(portfolioData.portfolio_meta.next_review_at)}
-                  {" · "}بازتنظیم برنامه‌ریزی‌شده: {formatDateTime(
+                  بازبینی بعدی:{' '}
+                  {formatDateTime(portfolioData.portfolio_meta.next_review_at)}
+                  {' · '}بازتنظیم برنامه‌ریزی‌شده:{' '}
+                  {formatDateTime(
                     portfolioData.portfolio_meta.next_rebalance_at,
                   )}
                 </p>
@@ -1045,23 +833,24 @@ export default function DashboardPage() {
               className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-4 py-2.5 text-sm text-[var(--nv-text-soft)] transition-all hover:bg-[var(--nv-soft-strong)] hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw
-                className={`h-4 w-4 ${isPortfolioFetching ? 'animate-spin' : ''
-                  }`}
+                className={`h-4 w-4 ${
+                  isPortfolioFetching ? 'animate-spin' : ''
+                }`}
               />
               به‌روزرسانی تحلیل
             </button>
           </div>
 
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] p-4 text-sm leading-7 text-amber-100/80">
-            این خروجی یک سناریوی تحلیلی مبتنی بر پروفایل ریسک است و
-            دستور قطعی خرید یا فروش محسوب نمی‌شود. اعداد ورود و خروج باید
-            همراه با قیمت لحظه‌ای بازار و کنترل ریسک بررسی شوند.
+            این خروجی یک سناریوی تحلیلی مبتنی بر پروفایل ریسک است و دستور قطعی
+            خرید یا فروش محسوب نمی‌شود. اعداد ورود و خروج باید همراه با قیمت
+            لحظه‌ای بازار و کنترل ریسک بررسی شوند.
           </div>
 
           {portfolioData?.portfolio_meta?.data_hold?.active ? (
             <div className="rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-4 text-sm leading-7 text-sky-200">
-              منبع تازه بازار موقتاً در دسترس نیست؛ سبد قبلی حفظ شده و خرید
-              تازه تا دریافت داده معتبر متوقف است.
+              منبع تازه بازار موقتاً در دسترس نیست؛ سبد قبلی حفظ شده و خرید تازه
+              تا دریافت داده معتبر متوقف است.
             </div>
           ) : null}
 
@@ -1096,9 +885,7 @@ export default function DashboardPage() {
                 const action = normalizeSignalAction(item);
                 const signalMeta = getSignalMeta(action);
                 const SignalIcon = signalMeta.icon;
-                const confidence = getConfidence(
-                  item.confidence_score
-                );
+                const confidence = getConfidence(item.confidence_score);
 
                 return (
                   <article
@@ -1145,9 +932,7 @@ export default function DashboardPage() {
                           </p>
                           <p className="font-black text-[var(--nv-text)]">
                             {item.allocation_percent !== undefined
-                              ? `${formatNumber(
-                                item.allocation_percent
-                              )}%`
+                              ? `${formatNumber(item.allocation_percent)}%`
                               : 'تعیین نشده'}
                           </p>
                           {item.suggested_amount !== undefined && (
@@ -1221,9 +1006,7 @@ export default function DashboardPage() {
                             سطح ریسک
                           </p>
                           <p className="text-sm font-bold text-[var(--nv-text)]">
-                            {item.risk_level ||
-                              riskProfile ||
-                              'تعیین نشده'}
+                            {item.risk_level || riskProfile || 'تعیین نشده'}
                           </p>
                         </div>
 
@@ -1261,9 +1044,7 @@ export default function DashboardPage() {
                           منطق تحلیل متناسب با پروفایل شما
                         </p>
                         <div className="prose prose-sm max-w-none leading-8 text-[var(--nv-text-soft)] prose-headings:text-[var(--nv-text)] prose-strong:text-cyan-600 dark:prose-invert dark:prose-strong:text-cyan-300">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                          >
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {item.psychological_analysis ||
                               'تحلیل روان‌شناختی برای این نماد ثبت نشده است.'}
                           </ReactMarkdown>
