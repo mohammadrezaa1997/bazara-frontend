@@ -6,12 +6,18 @@ import {
   ExternalLink,
   Eye,
   Newspaper,
+  RefreshCw,
   ShieldAlert,
   TrendingDown,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import type { AdvisorAction, AdvisorItem } from "../../types";
+import type {
+  AdvisorAction,
+  AdvisorComponentEvidence,
+  AdvisorItem,
+  AdvisorNewsEvidence,
+} from "../../types";
 import {
   formatDate,
   formatPercent,
@@ -19,7 +25,7 @@ import {
   unitLabel,
 } from "../../utils/formatters";
 
-export const ADVISOR_CARD_UI_VERSION = "responsive-theme-ui-v1";
+export const ADVISOR_CARD_UI_VERSION = "advisor-card-ui-v3";
 
 const ACTION_META: Record<
   AdvisorAction,
@@ -28,27 +34,27 @@ const ACTION_META: Record<
   buy: {
     label: "خرید پله‌ای",
     icon: CheckCircle2,
-    tone: "border-emerald-500/25 bg-emerald-500/[0.09] text-emerald-700 dark:text-emerald-300",
+    tone: "nv-status-success",
   },
   sell: {
     label: "فروش / کاهش",
     icon: TrendingDown,
-    tone: "border-rose-500/25 bg-rose-500/[0.09] text-rose-700 dark:text-rose-300",
+    tone: "nv-status-danger",
   },
   hold: {
     label: "نگهداری",
     icon: Clock3,
-    tone: "border-blue-500/25 bg-blue-500/[0.09] text-blue-700 dark:text-blue-300",
+    tone: "nv-status-info",
   },
   avoid: {
     label: "عدم ورود",
     icon: ShieldAlert,
-    tone: "border-amber-500/25 bg-amber-500/[0.09] text-amber-700 dark:text-amber-300",
+    tone: "nv-status-warning",
   },
   watch: {
     label: "زیرنظر",
     icon: Eye,
-    tone: "border-violet-500/25 bg-violet-500/[0.09] text-violet-700 dark:text-violet-300",
+    tone: "border-[var(--nv-border-strong)] bg-[var(--nv-soft-strong)] text-[var(--nv-text-soft)]",
   },
 };
 
@@ -76,24 +82,82 @@ interface ConditionalScenarioPlan {
   };
 }
 
-interface ComponentEvidence {
-  key: string;
-  label: string;
-  score?: ScenarioValue;
-  confidence?: ScenarioValue;
-  sample_count?: number;
+const WATCH_TRIGGER_COPY: Record<string, string> = {
+  fresh_price:
+    "پس از دریافت قیمت تازه، تحلیل ترکیبی دوباره ساخته و این نماد ارزیابی می‌شود.",
+  valid_composite_analysis:
+    "پس از ساخته‌شدن تحلیل ترکیبی معتبر شامل تکنیکال، خبر و شرایط کلان، این نماد دوباره بررسی می‌شود.",
+};
+
+function watchTriggerDescription(item: AdvisorItem) {
+  const trigger = item.watch_trigger;
+  if (!trigger) return null;
+  return (
+    trigger.description ||
+    (trigger.type ? WATCH_TRIGGER_COPY[trigger.type] : undefined) ||
+    "پس از تازه‌شدن داده‌ها، این دارایی دوباره ارزیابی می‌شود."
+  );
 }
 
-interface DetailedAdvisorItem {
-  analysis_detail?: string | null;
-  decision_explanation?: string | null;
-  final_score?: ScenarioValue;
-  component_evidence?: ComponentEvidence[];
-  scenario_plan?: ConditionalScenarioPlan;
+function emptyNewsMessage(item: AdvisorItem) {
+  if (item.evidence_note) return item.evidence_note;
+  if (item.reason_code === "stale_price") {
+    return "قیمت این دارایی تازه نیست؛ به همین دلیل تحلیل ترکیبی جدید ساخته نشده و خبرها هنوز به این تصمیم متصل نشده‌اند.";
+  }
+  if (item.reason_code === "missing_valid_composite") {
+    return "تحلیل ترکیبی معتبر برای این دارایی موجود نیست. پس از تکمیل تحلیل تکنیکال، خبر و داده‌های کلان، شواهد خبری اینجا نمایش داده می‌شوند.";
+  }
+  return "در تحلیل فعلی، خبر مستقیمی با اعتبار کافی برای اثرگذاری بر این تصمیم ثبت نشده است.";
 }
 
-function score(value: number | undefined) {
-  return value === undefined ? "—" : `${value} از ۱۰۰`;
+function NewsEvidenceCard({ news }: { news: AdvisorNewsEvidence }) {
+  const direction = newsDirection(news.direction);
+  const href = safeNewsUrl(news.url);
+
+  return (
+    <article className="rounded-xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-3.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h5 className="text-sm font-black leading-7 text-[var(--nv-text)] sm:text-[15px]">
+            {news.title}
+          </h5>
+          <p className="mt-0.5 text-xs leading-5 text-[var(--nv-muted)]">
+            {news.source || "منبع نامشخص"}
+            {news.published_at ? ` · ${formatDate(news.published_at)}` : ""}
+          </p>
+        </div>
+        <span
+          className={`w-fit shrink-0 rounded-lg border px-2.5 py-1 text-xs font-black ${direction.tone}`}
+        >
+          {direction.label} · {formatPrice(news.score)}
+        </span>
+      </div>
+
+      {news.reason ? (
+        <p className="mt-2 text-sm leading-7 text-[var(--nv-text-soft)]">
+          {news.reason}
+        </p>
+      ) : null}
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--nv-muted)]">
+        <span>
+          اطمینان {news.confidence_score ?? "—"}٪
+          {news.horizon ? ` · افق اثر ${news.horizon}` : ""}
+        </span>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 font-bold text-[var(--nv-accent)] hover:bg-[var(--nv-accent-soft)]"
+          >
+            مشاهده خبر
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
 }
 
 function safeNewsUrl(value: string | null | undefined) {
@@ -112,13 +176,13 @@ function newsDirection(value: string | null | undefined) {
   if (value?.includes("bearish")) {
     return {
       label: "اثر منفی",
-      tone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+      tone: "nv-status-danger",
     };
   }
   if (value?.includes("bullish")) {
     return {
       label: "اثر مثبت",
-      tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      tone: "nv-status-success",
     };
   }
   return {
@@ -137,7 +201,7 @@ function LevelBox({
   tone?: string;
 }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-soft)] p-3.5">
+    <div className="nv-surface min-w-0 rounded-xl p-3.5">
       <p className="text-xs font-medium leading-5 text-[var(--nv-muted)]">
         {label}
       </p>
@@ -151,6 +215,36 @@ function LevelBox({
   );
 }
 
+function ScoreMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value?: number;
+  tone: string;
+}) {
+  const normalized = Math.min(100, Math.max(0, Number(value ?? 0)));
+
+  return (
+    <div className={`min-w-0 ${tone}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-bold text-[var(--nv-muted)]">{label}</p>
+        <p className="text-sm font-black tabular-nums">
+          {value === undefined ? "—" : value.toLocaleString("fa-IR")}
+        </p>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--nv-soft-strong)]">
+        <div
+          className="h-full rounded-full bg-current transition-[width] duration-300"
+          style={{ width: `${normalized}%` }}
+          aria-hidden="true"
+        />
+      </div>
+    </div>
+  );
+}
+
 export function AdvisorCard({ item, action }: AdvisorCardProps) {
   const meta = ACTION_META[action];
   const ActionIcon = meta.icon;
@@ -158,9 +252,9 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
   const targets = (plan?.targets ?? []).filter(
     (target): target is string | number => target !== null,
   );
-  const details = item as AdvisorItem & DetailedAdvisorItem;
-  const scenario = details.scenario_plan;
-  const componentEvidence = details.component_evidence ?? [];
+  const scenario = item.scenario_plan as ConditionalScenarioPlan | undefined;
+  const componentEvidence: AdvisorComponentEvidence[] =
+    item.component_evidence ?? [];
   const newsEvidence = componentEvidence
     .flatMap((component) =>
       (component.evidence_items ?? []).map((evidence) => ({
@@ -169,6 +263,7 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
       })),
     )
     .slice(0, 5);
+  const triggerDescription = watchTriggerDescription(item);
   const scenarioTargets = (scenario?.targets_after_confirmation ?? []).filter(
     (target): target is string | number =>
       target !== null && target !== undefined,
@@ -178,9 +273,9 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
   );
 
   return (
-    <article className="overflow-hidden rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] shadow-[var(--nv-shadow)]">
+    <article className="nv-card-interactive min-w-0 overflow-hidden rounded-2xl">
       <div className="p-4 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-xl font-black leading-8 text-[var(--nv-text)]">
@@ -188,21 +283,35 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
               </h3>
               <span
                 dir="ltr"
-                className="rounded-full border border-[var(--nv-border)] bg-[var(--nv-soft)] px-2.5 py-1 text-xs font-bold text-[var(--nv-muted)]"
+                className="rounded-lg border border-[var(--nv-border)] bg-[var(--nv-soft)] px-2.5 py-1 text-xs font-bold text-[var(--nv-muted)]"
               >
                 {item.symbol}
               </span>
             </div>
-            <p className="mt-2 text-lg font-black text-[var(--nv-text)]">
-              {formatPrice(item.current_price)}
-              <span className="mr-1 text-xs font-medium text-[var(--nv-muted)]">
+            <div className="mt-2 flex flex-wrap items-baseline gap-1.5">
+              <p
+                dir="ltr"
+                className="text-left text-lg font-black tabular-nums text-[var(--nv-text)]"
+              >
+                {formatPrice(item.current_price)}
+              </p>
+              <span className="text-xs font-medium text-[var(--nv-muted)]">
                 {unitLabel(item.price_unit)}
               </span>
-            </p>
+            </div>
+            {item.price_recorded_at ? (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs leading-5 text-[var(--nv-muted)]">
+                <Clock3 className="h-3.5 w-3.5" />
+                قیمت ثبت‌شده در {formatDate(item.price_recorded_at)}
+                {item.price_age_minutes !== undefined
+                  ? ` · ${Math.round(item.price_age_minutes).toLocaleString("fa-IR")} دقیقه قبل`
+                  : ""}
+              </p>
+            ) : null}
           </div>
 
           <span
-            className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-2xl border px-3 text-sm font-black ${meta.tone}`}
+            className={`inline-flex min-h-10 w-fit shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-black ${meta.tone}`}
           >
             <ActionIcon className="h-4 w-4" />
             {meta.label}
@@ -213,26 +322,53 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
           {item.reason || "برای این تصمیم توضیحی ثبت نشده است."}
         </p>
 
-        {details.decision_explanation ? (
-          <div className="mt-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.07] p-4">
-            <p className="text-sm font-black text-cyan-700 dark:text-cyan-300">
+        {item.decision_explanation ? (
+          <div className="nv-status-info mt-4 rounded-xl p-4">
+            <p className="text-sm font-black">
               نتیجه تصمیم
             </p>
             <p className="mt-2 text-[15px] font-bold leading-8 text-[var(--nv-text)] sm:text-base">
-              {details.decision_explanation}
+              {item.decision_explanation}
             </p>
           </div>
         ) : null}
 
-        {details.analysis_detail || componentEvidence.length ? (
+        <section className="mt-4 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] p-3.5 sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="flex items-center gap-2 text-sm font-black text-[var(--nv-text)] sm:text-[15px]">
+              <Newspaper className="h-4 w-4 text-[var(--nv-accent)]" />
+              خبرهای اثرگذار
+            </h4>
+            <span className="rounded-lg border border-[var(--nv-border)] bg-[var(--nv-panel)] px-2 py-1 text-xs font-bold text-[var(--nv-muted)]">
+              {newsEvidence.length.toLocaleString("fa-IR")} خبر معتبر
+            </span>
+          </div>
+
+          {newsEvidence.length ? (
+            <div className="mt-3 space-y-2.5">
+              {newsEvidence.map((news, index) => (
+                <NewsEvidenceCard
+                  key={`${news.signal_id ?? news.title}-${index}`}
+                  news={news}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-dashed border-[var(--nv-border-strong)] bg-[var(--nv-panel)] p-3 text-sm leading-7 text-[var(--nv-muted)]">
+              <RefreshCw className="mt-1 h-4 w-4 shrink-0 text-[var(--nv-accent)]" />
+              <p>{emptyNewsMessage(item)}</p>
+            </div>
+          )}
+        </section>
+
+        {item.analysis_detail || componentEvidence.length ? (
           <details className="group mt-4 rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-soft)]">
             <summary className="flex min-h-13 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[15px] font-black text-[var(--nv-text)] marker:hidden">
               <span>نمایش تحلیل کامل و شواهد</span>
               <span className="flex items-center gap-2">
-                {details.final_score !== null &&
-                details.final_score !== undefined ? (
-                  <span className="rounded-full bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-700 dark:text-cyan-300">
-                    امتیاز {formatPrice(details.final_score)}
+                {item.final_score !== null && item.final_score !== undefined ? (
+                  <span className="rounded-lg bg-[var(--nv-accent-soft)] px-2.5 py-1 text-xs font-bold text-[var(--nv-accent)]">
+                    امتیاز {formatPrice(item.final_score)}
                   </span>
                 ) : null}
                 <ChevronDown className="h-5 w-5 text-[var(--nv-muted)] transition group-open:rotate-180" />
@@ -240,9 +376,9 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
             </summary>
 
             <div className="border-t border-[var(--nv-border)] px-4 pb-4 pt-3">
-              {details.analysis_detail ? (
+              {item.analysis_detail ? (
                 <p className="text-[15px] leading-8 text-[var(--nv-text-soft)] sm:text-base sm:leading-9">
-                  {details.analysis_detail}
+                  {item.analysis_detail}
                 </p>
               ) : null}
 
@@ -252,9 +388,9 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
                     const numericScore = Number(component.score ?? 0);
                     const scoreTone =
                       numericScore > 9
-                        ? "text-emerald-600 dark:text-emerald-300"
+                        ? "text-[var(--nv-positive)]"
                         : numericScore < -9
-                          ? "text-rose-600 dark:text-rose-300"
+                          ? "text-[var(--nv-danger)]"
                           : "text-[var(--nv-text)]";
                     return (
                       <div
@@ -282,80 +418,16 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
                 </div>
               ) : null}
 
-              {newsEvidence.length ? (
-                <section className="mt-5 border-t border-[var(--nv-border)] pt-4">
-                  <h4 className="flex items-center gap-2 text-base font-black text-[var(--nv-text)]">
-                    <Newspaper className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-                    خبرهای اثرگذار بر این تصمیم
-                  </h4>
-                  <div className="mt-3 space-y-3">
-                    {newsEvidence.map((news, index) => {
-                      const direction = newsDirection(news.direction);
-                      const href = safeNewsUrl(news.url);
-                      return (
-                        <article
-                          key={`${news.signal_id ?? news.title}-${index}`}
-                          className="rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-4"
-                        >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0 flex-1">
-                              <h5 className="text-[15px] font-black leading-7 text-[var(--nv-text)] sm:text-base">
-                                {news.title}
-                              </h5>
-                              <p className="mt-1 text-sm leading-6 text-[var(--nv-muted)]">
-                                {news.source || "منبع نامشخص"}
-                                {news.published_at
-                                  ? ` · ${formatDate(news.published_at)}`
-                                  : ""}
-                              </p>
-                            </div>
-                            <span className={`w-fit shrink-0 rounded-full px-3 py-1.5 text-xs font-black ${direction.tone}`}>
-                              {direction.label} · {formatPrice(news.score)}
-                            </span>
-                          </div>
-
-                          {news.reason ? (
-                            <p className="mt-3 text-[15px] leading-8 text-[var(--nv-text-soft)] sm:text-base">
-                              <span className="font-black text-cyan-700 dark:text-cyan-300">
-                                چرا مهم است؟{" "}
-                              </span>
-                              {news.reason}
-                            </p>
-                          ) : null}
-
-                          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--nv-muted)]">
-                            <span>
-                              اطمینان {news.confidence_score ?? "—"}٪
-                              {news.horizon ? ` · افق اثر ${news.horizon}` : ""}
-                            </span>
-                            {href ? (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-2 font-bold text-cyan-700 hover:bg-cyan-500/10 dark:text-cyan-300"
-                              >
-                                مشاهده خبر
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            ) : null}
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </section>
-              ) : null}
             </div>
           </details>
         ) : null}
 
         {item.blocking_reasons?.length ? (
-          <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/[0.07] p-4">
-            <p className="flex items-center gap-2 text-sm font-black text-amber-700 dark:text-amber-300">
+          <div className="nv-status-warning mt-4 rounded-xl p-4">
+            <p className="flex items-center gap-2 text-sm font-black">
               <AlertTriangle className="h-4 w-4" /> دلایل عدم اقدام
             </p>
-            <ul className="mt-2 space-y-1 text-[15px] leading-7 text-amber-800/85 dark:text-amber-100/80">
+            <ul className="mt-2 space-y-1 text-[15px] leading-7">
               {item.blocking_reasons.map((reason) => (
                 <li key={reason}>• {reason}</li>
               ))}
@@ -363,22 +435,22 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
           </div>
         ) : null}
 
-        {item.watch_trigger?.description ? (
-          <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/[0.07] p-4 text-[15px] leading-7 text-violet-800 dark:text-violet-100/85">
-            <span className="font-black text-violet-700 dark:text-violet-300">
+        {triggerDescription ? (
+          <div className="nv-status-info mt-4 rounded-xl p-4 text-[15px] leading-7">
+            <span className="font-black">
               شرط بررسی دوباره:{" "}
             </span>
-            {item.watch_trigger.description}
+            {triggerDescription}
           </div>
         ) : null}
 
         {action === "watch" && scenario ? (
-          <section className="mt-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.055] p-4">
+          <section className="nv-status-info mt-4 rounded-xl p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-2 text-sm font-black text-cyan-700 dark:text-cyan-300">
+              <p className="flex items-center gap-2 text-sm font-black">
                 <Eye className="h-4 w-4" /> سناریوی مشروط بررسی
               </p>
-              <span className="rounded-full border border-cyan-500/20 bg-[var(--nv-panel)] px-2.5 py-1 text-xs font-bold text-[var(--nv-muted)]">
+              <span className="rounded-full border border-[var(--nv-border)] bg-[var(--nv-panel)] px-2.5 py-1 text-xs font-bold text-[var(--nv-muted)]">
                 سفارش خرید نیست
               </span>
             </div>
@@ -405,7 +477,7 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
               />
               <LevelBox
                 label="ابطال سناریو زیر"
-                tone="text-rose-600 dark:text-rose-300"
+                tone="text-[var(--nv-danger)]"
                 value={
                   scenario.invalidation_below
                     ? formatPrice(scenario.invalidation_below)
@@ -414,7 +486,7 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
               />
               <LevelBox
                 label="هدف پس از تأیید"
-                tone="text-emerald-600 dark:text-emerald-300"
+                tone="text-[var(--nv-positive)]"
                 value={
                   scenarioTargets[0]
                     ? formatPrice(scenarioTargets[0])
@@ -424,7 +496,7 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
             </div>
 
             {scenario.scenario_type === "improve_risk_reward" ? (
-              <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-3 text-sm leading-7 text-amber-800 dark:text-amber-100/80">
+              <div className="nv-status-warning mt-3 rounded-xl p-3 text-sm leading-7">
                 <p>
                   نسبت فعلی:{" "}
                   <strong>{formatPrice(scenario.current_risk_reward)}</strong>
@@ -466,12 +538,12 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
               />
               <LevelBox
                 label="حد ضرر"
-                tone="text-rose-600 dark:text-rose-300"
+                tone="text-[var(--nv-danger)]"
                 value={formatPrice(plan?.stop_loss)}
               />
               <LevelBox
                 label="هدف اول"
-                tone="text-emerald-600 dark:text-emerald-300"
+                tone="text-[var(--nv-positive)]"
                 value={formatPrice(targets[0])}
               />
               <LevelBox
@@ -483,7 +555,7 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
         ) : null}
 
         {item.allocation ? (
-          <div className="mt-4 grid grid-cols-1 gap-2 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4 min-[420px]:grid-cols-3">
+          <div className="nv-status-success mt-4 grid grid-cols-1 gap-2 rounded-xl p-4 min-[420px]:grid-cols-3">
             <LevelBox
               label="سهم بودجه"
               value={formatPercent(item.allocation.percent)}
@@ -500,7 +572,7 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
         ) : null}
 
         {item.position ? (
-          <div className="mt-4 grid grid-cols-1 gap-2 rounded-2xl border border-blue-500/15 bg-blue-500/[0.06] p-4 min-[420px]:grid-cols-2 sm:grid-cols-4">
+          <div className="nv-status-info mt-4 grid grid-cols-1 gap-2 rounded-xl p-4 min-[420px]:grid-cols-2 sm:grid-cols-4">
             <LevelBox
               label="تعداد فعلی"
               value={formatPrice(item.position.quantity)}
@@ -520,26 +592,27 @@ export function AdvisorCard({ item, action }: AdvisorCardProps) {
           </div>
         ) : null}
 
-        <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-4 border-t border-[var(--nv-border)] pt-4 sm:grid-cols-4">
-          <div>
-            <p className="text-xs text-[var(--nv-muted)]">اطمینان</p>
-            <p className="mt-1 text-sm font-bold">
-              {score(item.confidence_score)}
+        <div className="mt-5 grid grid-cols-1 gap-4 border-t border-[var(--nv-border)] pt-4 min-[420px]:grid-cols-2 lg:grid-cols-4">
+          <ScoreMetric
+            label="اطمینان تحلیل"
+            value={item.confidence_score}
+            tone="text-[var(--nv-info)]"
+          />
+          <ScoreMetric
+            label="کیفیت داده"
+            value={item.data_quality_score}
+            tone="text-[var(--nv-positive)]"
+          />
+          <ScoreMetric
+            label="ریسک"
+            value={item.risk_score}
+            tone="text-[var(--nv-warning)]"
+          />
+          <div className="rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-3 py-2.5">
+            <p className="text-xs font-bold text-[var(--nv-muted)]">
+              زمان ثبت قیمت
             </p>
-          </div>
-          <div>
-            <p className="text-xs text-[var(--nv-muted)]">کیفیت داده</p>
-            <p className="mt-1 text-sm font-bold">
-              {score(item.data_quality_score)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-[var(--nv-muted)]">ریسک</p>
-            <p className="mt-1 text-sm font-bold">{score(item.risk_score)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-[var(--nv-muted)]">زمان قیمت</p>
-            <p className="mt-1 text-sm font-bold">
+            <p className="mt-1 text-sm font-black text-[var(--nv-text)]">
               {formatDate(item.price_recorded_at)}
             </p>
           </div>

@@ -8,8 +8,8 @@ import Providers from "@/lib/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BAZARA Platform",
-  description: "AI-Powered Portfolio Strategy & Market Analysis",
+  title: "بازارا | تحلیل بازار و سبد ترکیبی",
+  description: "تحلیل داده‌محور بازار ایران، رمزارز و فارکس در یک تجربه یکپارچه",
 };
 
 export const viewport: Viewport = {

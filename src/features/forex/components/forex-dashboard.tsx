@@ -97,27 +97,22 @@ export function ForexDashboard() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[var(--nv-bg)] text-[var(--nv-text)]"
+      className="nv-page nv-mobile-safe text-[var(--nv-text)]"
     >
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -right-48 -top-48 h-[560px] w-[560px] rounded-full bg-violet-500/[0.055] blur-3xl" />
-        <div className="absolute -left-44 top-1/3 h-[460px] w-[460px] rounded-full bg-cyan-500/[0.04] blur-3xl" />
-      </div>
-
       <ForexHeader
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
       />
 
       {loading ? (
-        <div className="relative flex min-h-[70vh] items-center justify-center gap-3 text-sm text-violet-500">
+        <div className="relative flex min-h-[70vh] items-center justify-center gap-3 text-sm text-[var(--nv-accent)]">
           <Loader2 className="h-6 w-6 animate-spin" />
           دریافت بازار فارکس...
         </div>
       ) : pageError ? (
         <main className="relative mx-auto max-w-xl px-4 py-24 text-center">
-          <div className="rounded-3xl border border-rose-500/20 bg-rose-500/[0.06] p-8">
-            <AlertTriangle className="mx-auto h-9 w-9 text-rose-500" />
+          <div className="nv-status-danger rounded-2xl p-8">
+            <AlertTriangle className="mx-auto h-9 w-9" />
 
             <h2 className="mt-4 font-black">
               ارتباط با سرویس فارکس برقرار نشد
@@ -133,7 +128,7 @@ export function ForexDashboard() {
         <main className="relative mx-auto max-w-[1500px] px-3 py-6 sm:px-6 lg:px-10 lg:py-10">
           <section className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-xs font-bold text-violet-600 dark:text-violet-300">
+              <div className="nv-kicker flex items-center gap-2">
                 <Radio className="h-4 w-4" />
                 مرکز تحلیل تکنیکال فارکس
               </div>
@@ -149,13 +144,13 @@ export function ForexDashboard() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <select
                 value={selectedSymbol}
                 onChange={(event) =>
                   setSelectedSymbol(event.target.value)
                 }
-                className="min-h-12 rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] px-4 text-sm font-bold outline-none focus:border-violet-500/50"
+                className="nv-field min-h-12 w-full rounded-xl px-4 text-sm font-bold sm:w-auto"
               >
                 {pairs.map((pair) => (
                   <option
@@ -167,7 +162,7 @@ export function ForexDashboard() {
                 ))}
               </select>
 
-              <div className="flex rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-1">
+              <div className="nv-toolbar grid grid-cols-3 rounded-xl p-1">
                 {timeframes.map((item) => (
                   <button
                     key={item.value}
@@ -175,10 +170,10 @@ export function ForexDashboard() {
                     onClick={() =>
                       setTimeframe(item.value)
                     }
-                    className={`min-w-max rounded-xl px-3 py-2.5 text-xs font-bold transition ${
+                    className={`min-w-max rounded-lg border px-3 py-2.5 text-xs font-extrabold transition ${
                       timeframe === item.value
-                        ? 'bg-violet-500 text-white'
-                        : 'text-[var(--nv-muted)] hover:bg-[var(--nv-soft)]'
+                        ? 'border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]'
+                        : 'border-transparent text-[var(--nv-muted)] hover:bg-[var(--nv-panel)] hover:text-[var(--nv-text)]'
                     }`}
                   >
                     {item.label}
@@ -199,7 +194,7 @@ export function ForexDashboard() {
               },
               {
                 Icon: ShieldCheck,
-                label: 'مجاز برای سبد',
+                label: 'قابل ارزیابی',
                 value:
                   overviewQuery.data
                     ?.portfolio_eligible_pairs ?? '—',
@@ -226,9 +221,9 @@ export function ForexDashboard() {
               }) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-4 shadow-[var(--nv-shadow)]"
+                  className="nv-card rounded-2xl p-4"
                 >
-                  <CardIcon className="h-4 w-4 text-violet-500" />
+                  <CardIcon className="h-4 w-4 text-[var(--nv-accent)]" />
 
                   <p className="mt-3 text-xs text-[var(--nv-muted)]">
                     {label}
@@ -242,7 +237,7 @@ export function ForexDashboard() {
             )}
           </section>
 
-          <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="mt-6 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
             <TechnicalChart
               pair={selectedPair}
               candles={historyQuery.data?.results ?? []}
@@ -261,12 +256,12 @@ export function ForexDashboard() {
             />
           </div>
           <div className="mt-5">
-  <AIAdviceCard
-    advice={analysisQuery.data?.ai_advice}
-    pairName={selectedPair?.display_symbol}
-    isLoading={analysisQuery.isLoading || analysisQuery.isFetching}
-  />
-</div>
+            <AIAdviceCard
+              advice={analysisQuery.data?.ai_advice}
+              pairName={selectedPair?.display_symbol}
+              isLoading={analysisQuery.isLoading || analysisQuery.isFetching}
+            />
+          </div>
         </main>
       )}
     </div>

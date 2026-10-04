@@ -38,9 +38,9 @@ export function ReplayControls({
   return (
     <div
       dir="rtl"
-      className="flex flex-wrap items-center gap-2 border-b border-amber-500/15 bg-amber-500/[0.055] px-3 py-2.5"
+      className="flex flex-wrap items-center gap-2 border-b border-[var(--nv-warning-border)] bg-[var(--nv-warning-soft)] px-3 py-2.5"
     >
-      <span className="text-xs font-black text-amber-700 dark:text-amber-300">
+      <span className="text-xs font-black text-[var(--nv-warning)]">
         بازپخش کندل
       </span>
       <button
@@ -55,7 +55,7 @@ export function ReplayControls({
       <button
         type="button"
         onClick={() => onPlayingChange(!playing)}
-        className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500 text-slate-950"
+        className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--nv-warning)] text-white shadow-sm"
         aria-label={playing ? 'توقف بازپخش' : 'شروع بازپخش'}
       >
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -75,7 +75,7 @@ export function ReplayControls({
         max={Math.max(2, total)}
         value={Math.min(total, visibleCount)}
         onChange={(event) => onSeek(Number(event.target.value))}
-        className="h-1.5 min-w-36 flex-1 accent-amber-500"
+        className="h-1.5 min-w-36 flex-1 accent-[var(--nv-warning)]"
         aria-label="موقعیت بازپخش"
       />
       <span dir="ltr" className="text-[11px] font-bold text-[var(--nv-muted)]">
@@ -89,7 +89,7 @@ export function ReplayControls({
             onClick={() => onSpeedChange(item)}
             className={`rounded-md px-2 py-1 text-[10px] font-black ${
               speed === item
-                ? 'bg-amber-500 text-slate-950'
+                ? 'bg-[var(--nv-warning)] text-white'
                 : 'text-[var(--nv-muted)]'
             }`}
           >

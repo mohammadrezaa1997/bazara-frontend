@@ -20,7 +20,29 @@ const CORE_ASSETS = [
 
 const DEFAULT_SYMBOLS = CORE_ASSETS.map((asset) => asset.symbol);
 
-export const ADVISOR_FORM_UI_VERSION = "responsive-theme-ui-v1";
+const RISK_OPTIONS: Array<{
+  value: RiskProfile;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "conservative",
+    label: "کم‌ریسک",
+    description: "اولویت با حفظ سرمایه",
+  },
+  {
+    value: "moderate",
+    label: "متعادل",
+    description: "تعادل ریسک و بازده",
+  },
+  {
+    value: "aggressive",
+    label: "پرریسک",
+    description: "پذیرش نوسان بیشتر",
+  },
+];
+
+export const ADVISOR_FORM_UI_VERSION = "advisor-form-ui-v2";
 
 interface HoldingRow {
   id: number;
@@ -172,26 +194,28 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="overflow-hidden rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] shadow-[var(--nv-shadow)]"
+      className="nv-card overflow-hidden rounded-2xl"
     >
       <div className="border-b border-[var(--nv-border)] bg-[var(--nv-soft)] p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]">
             <WalletCards className="h-5 w-5" />
           </div>
-          <div>
-            <h2 className="text-lg font-black text-[var(--nv-text)]">
-              ساخت پیشنهاد شخصی
+          <div className="min-w-0">
+            <p className="text-[11px] font-black text-[var(--nv-accent)]">
+              تنظیمات تحلیل
+            </p>
+            <h2 className="mt-0.5 text-base font-black text-[var(--nv-text)] sm:text-lg">
+              پیشنهاد متناسب با شرایط شما
             </h2>
-            <p className="mt-1 text-sm leading-6 text-[var(--nv-muted)]">
-              اطلاعات را به تومان وارد کنید؛ ارقام فارسی و انگلیسی پذیرفته
-              می‌شوند.
+            <p className="mt-1 text-xs leading-5 text-[var(--nv-muted)]">
+              همه مبلغ‌ها بر حسب تومان هستند.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-6 p-4 sm:p-5">
+      <div className="space-y-5 p-4 sm:p-5">
         <section className="space-y-4">
           <div className="grid gap-4">
             <label className="block space-y-2">
@@ -208,7 +232,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
                     setBudget(normalizeDecimal(event.target.value, 0))
                   }
                   placeholder="100,000,000"
-                  className="h-13 w-full rounded-2xl border border-[var(--nv-border-strong)] bg-[var(--nv-soft)] px-4 pl-16 text-left text-base font-bold text-[var(--nv-text)] outline-none transition placeholder:text-[var(--nv-faint)] focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/15"
+                  className="nv-field h-12 w-full rounded-xl px-4 pl-16 text-left text-base font-bold tabular-nums"
                 />
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--nv-muted)]">
                   تومان
@@ -219,24 +243,39 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
               </span>
             </label>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-bold text-[var(--nv-text-soft)]">
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-bold text-[var(--nv-text-soft)]">
                 میزان ریسک‌پذیری
-              </span>
-              <select
-                value={riskProfile}
-                onChange={(event) =>
-                  setRiskProfile(event.target.value as RiskProfile)
+              </legend>
+              <div className="grid grid-cols-3 gap-2">
+                {RISK_OPTIONS.map((option) => {
+                  const selected = riskProfile === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setRiskProfile(option.value)}
+                      className={`min-w-0 rounded-xl border px-2 py-2.5 text-center transition ${
+                        selected
+                          ? "border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)] shadow-sm"
+                          : "border-[var(--nv-border)] bg-[var(--nv-panel)] text-[var(--nv-muted)] hover:border-[var(--nv-border-strong)] hover:text-[var(--nv-text)]"
+                      }`}
+                    >
+                      <span className="block text-xs font-black sm:text-sm">
+                        {option.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs leading-6 text-[var(--nv-muted)]">
+                {
+                  RISK_OPTIONS.find((option) => option.value === riskProfile)
+                    ?.description
                 }
-                className="h-13 w-full rounded-2xl border border-[var(--nv-border-strong)] bg-[var(--nv-soft)] px-4 text-base text-[var(--nv-text)] outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/15"
-              >
-                <option value="conservative">
-                  کم‌ریسک — حفظ سرمایه مهم‌تر است
-                </option>
-                <option value="moderate">متعادل — تعادل ریسک و بازده</option>
-                <option value="aggressive">پرریسک — پذیرش نوسان بیشتر</option>
-              </select>
-            </label>
+              </p>
+            </fieldset>
 
             <label className="block space-y-2">
               <span className="text-sm font-bold text-[var(--nv-text-soft)]">
@@ -249,12 +288,12 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
                     event.target.value as InvestmentHorizon,
                   )
                 }
-                className="h-13 w-full rounded-2xl border border-[var(--nv-border-strong)] bg-[var(--nv-soft)] px-4 text-base text-[var(--nv-text)] outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/15"
+                className="nv-field h-12 w-full rounded-xl px-3 text-sm font-bold"
               >
-                <option value="1_month">یک‌ماهه — بازبینی روزانه، تنظیم هفتگی</option>
-                <option value="3_months">سه‌ماهه — بازبینی سه‌روزه، تنظیم دوهفته‌ای</option>
-                <option value="6_months">شش‌ماهه — بازبینی هفتگی، تنظیم ماهانه</option>
-                <option value="1_year">یک‌ساله — بازبینی دوهفته‌ای، تنظیم دوماهه</option>
+                <option value="1_month">یک‌ماهه — بازبینی روزانه</option>
+                <option value="3_months">سه‌ماهه — بازبینی سه‌روزه</option>
+                <option value="6_months">شش‌ماهه — بازبینی هفتگی</option>
+                <option value="1_year">یک‌ساله — بازبینی دوهفته‌ای</option>
               </select>
               <span className="block text-xs leading-6 text-[var(--nv-muted)]">
                 بازبینی به معنی کنترل ریسک است؛ فقط در موعد تنظیم یا با فعال‌شدن
@@ -274,7 +313,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
             </p>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2">
             {CORE_ASSETS.map((asset) => {
               const selected = symbols.includes(asset.symbol);
               return (
@@ -283,10 +322,10 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
                   type="button"
                   aria-pressed={selected}
                   onClick={() => toggleSymbol(asset.symbol)}
-                  className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                  className={`min-h-11 rounded-xl border px-2 py-2 text-sm font-bold transition ${
                     selected
-                      ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-200"
-                      : "border-[var(--nv-border)] bg-[var(--nv-soft)] text-[var(--nv-muted)] hover:border-cyan-500/25 hover:text-[var(--nv-text)]"
+                      ? "border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)] shadow-sm"
+                      : "border-[var(--nv-border)] bg-[var(--nv-soft)] text-[var(--nv-muted)] hover:border-[var(--nv-border-strong)] hover:text-[var(--nv-text)]"
                   }`}
                 >
                   {asset.label}
@@ -309,7 +348,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
             <button
               type="button"
               onClick={addHolding}
-              className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.08] px-3 py-2 text-sm font-bold text-cyan-600 transition hover:bg-cyan-500/15 dark:text-cyan-200"
+              className="nv-button-secondary shrink-0 text-[var(--nv-accent)]"
             >
               <Plus className="h-4 w-4" />
               افزودن
@@ -320,7 +359,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
             <button
               type="button"
               onClick={addHolding}
-              className="mt-4 min-h-20 w-full rounded-2xl border border-dashed border-[var(--nv-border-strong)] bg-[var(--nv-soft)] px-4 py-5 text-center text-sm leading-7 text-[var(--nv-muted)] transition hover:border-cyan-500/30 hover:text-[var(--nv-text-soft)]"
+              className="mt-4 min-h-20 w-full rounded-xl border border-dashed border-[var(--nv-border-strong)] bg-[var(--nv-soft)] px-4 py-5 text-center text-sm leading-7 text-[var(--nv-muted)] transition hover:bg-[var(--nv-soft-strong)] hover:text-[var(--nv-text-soft)]"
             >
               اگر قبلاً دلار، طلا، سکه یا سهام خریده‌اید، اینجا اضافه کنید.
             </button>
@@ -347,7 +386,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
                   <button
                     type="button"
                     onClick={() => removeHolding(row.id)}
-                    className="grid h-11 w-11 place-items-center rounded-xl border border-rose-500/20 bg-rose-500/[0.07] text-rose-500 transition hover:bg-rose-500/15"
+                    className="nv-icon-button hover:border-[var(--nv-danger-border)] hover:bg-[var(--nv-danger-soft)] hover:text-[var(--nv-danger)]"
                     aria-label={`حذف دارایی ${index + 1}`}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -372,7 +411,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
                         })
                       }
                       placeholder="مثال: IR_GOLD_18K"
-                      className="h-12 w-full rounded-xl border border-[var(--nv-border-strong)] bg-[var(--nv-panel)] px-3 text-left text-sm text-[var(--nv-text)] outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/15"
+                      className="nv-field h-12 w-full rounded-xl px-3 text-left text-sm"
                     />
                   </label>
 
@@ -392,7 +431,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
                           })
                         }
                         placeholder="مثال: 2.5"
-                        className="h-12 w-full min-w-0 rounded-xl border border-[var(--nv-border-strong)] bg-[var(--nv-panel)] px-3 text-left text-sm text-[var(--nv-text)] outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/15"
+                        className="nv-field h-12 w-full min-w-0 rounded-xl px-3 text-left text-sm"
                       />
                     </label>
 
@@ -414,7 +453,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
                           })
                         }
                         placeholder="مثال: 18,500,000"
-                        className="h-12 w-full min-w-0 rounded-xl border border-[var(--nv-border-strong)] bg-[var(--nv-panel)] px-3 text-left text-sm text-[var(--nv-text)] outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/15"
+                        className="nv-field h-12 w-full min-w-0 rounded-xl px-3 text-left text-sm"
                       />
                     </label>
                   </div>
@@ -427,7 +466,7 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
         {formError ? (
           <p
             role="alert"
-            className="rounded-xl border border-rose-500/25 bg-rose-500/[0.07] px-4 py-3 text-sm leading-7 text-rose-700 dark:text-rose-200"
+            className="nv-status-danger rounded-xl px-4 py-3 text-sm leading-7"
           >
             {formError}
           </p>
@@ -436,12 +475,12 @@ export function AdvisorForm({ isPending, onSubmit }: AdvisorFormProps) {
         <button
           type="submit"
           disabled={isPending}
-          className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-500 to-blue-600 px-4 text-base font-black text-white shadow-[0_12px_35px_rgba(34,211,238,0.18)] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
+          className="nv-button-primary min-h-12 w-full text-sm disabled:cursor-wait disabled:opacity-60 sm:text-base"
         >
           {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
           {isPending
             ? "در حال ارزیابی داده‌های واقعی..."
-            : "ساخت پیشنهاد مشاور"}
+            : "تحلیل و ساخت پیشنهاد"}
         </button>
       </div>
     </form>

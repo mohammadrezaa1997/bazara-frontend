@@ -121,10 +121,10 @@ function ToolbarButton({
       onClick={onClick}
       className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition disabled:cursor-not-allowed disabled:opacity-35 ${
         active
-          ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-600 dark:text-cyan-300'
+          ? 'border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)] shadow-sm'
           : danger
-            ? 'border-rose-500/20 bg-rose-500/[0.06] text-rose-600 hover:bg-rose-500/10 dark:text-rose-300'
-            : 'border-[var(--nv-border)] bg-[var(--nv-soft)] text-[var(--nv-muted)] hover:border-cyan-500/30 hover:text-[var(--nv-text)]'
+            ? 'border-[var(--nv-danger-border)] bg-[var(--nv-danger-soft)] text-[var(--nv-danger)] hover:brightness-95'
+            : 'border-[var(--nv-border)] bg-[var(--nv-soft)] text-[var(--nv-muted)] hover:border-[var(--nv-border-strong)] hover:bg-[var(--nv-soft-strong)] hover:text-[var(--nv-text)]'
       }`}
     >
       {children}
@@ -193,14 +193,14 @@ export function ChartTopToolbar({
   return (
     <div
       dir="rtl"
-      className="relative flex min-h-14 flex-wrap items-center gap-2 border-b border-[var(--nv-border)] bg-[var(--nv-panel-raised)] px-3 py-2 lg:pr-4"
+      className="nv-scrollbar relative flex min-h-14 flex-nowrap items-center gap-2 overflow-x-auto border-b border-[var(--nv-border)] bg-[var(--nv-panel-raised)] px-3 py-2 lg:flex-wrap lg:overflow-visible lg:pr-4"
     >
       <button
         type="button"
         onClick={() => setShowIndicators((current) => !current)}
         className={`flex h-9 items-center gap-2 rounded-xl border px-3 text-xs font-black transition ${
           showIndicators
-            ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-600 dark:text-cyan-300'
+            ? 'border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)] shadow-sm'
             : 'border-[var(--nv-border)] bg-[var(--nv-soft)] text-[var(--nv-text-soft)]'
         }`}
       >
@@ -216,7 +216,7 @@ export function ChartTopToolbar({
             <BellRing className="h-4 w-4" />
           </ToolbarButton>
           {priceAlertCount > 0 ? (
-            <span className="pointer-events-none absolute -left-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-slate-950">
+            <span className="pointer-events-none absolute -left-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--nv-warning)] px-1 text-[9px] font-black text-white">
               {priceAlertCount > 9 ? '9+' : priceAlertCount}
             </span>
           ) : null}
@@ -300,9 +300,9 @@ export function ChartTopToolbar({
         <Trash2 className="h-4 w-4" />
       </ToolbarButton>
 
-      <div className="mr-auto flex items-center gap-2">
+      <div className="mr-auto flex shrink-0 items-center gap-2">
         {selectedDrawing ? (
-          <span className="hidden rounded-xl border border-cyan-500/20 bg-cyan-500/[0.07] px-3 py-2 text-[11px] font-bold text-cyan-600 sm:inline dark:text-cyan-300">
+          <span className="nv-chip-active hidden rounded-xl px-3 py-2 text-xs font-black sm:inline">
             یک ترسیم انتخاب شده
           </span>
         ) : (
@@ -320,9 +320,9 @@ export function ChartTopToolbar({
       </div>
 
       {showIndicators ? (
-        <div className="absolute right-3 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel-raised)] p-3 shadow-2xl">
+        <div className="absolute right-3 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel-raised)] p-3 shadow-[var(--nv-shadow-raised)]">
           <div className="mb-2 flex items-center gap-2 text-xs font-black text-[var(--nv-text)]">
-            <Activity className="h-4 w-4 text-cyan-500" />
+            <Activity className="h-4 w-4 text-[var(--nv-accent)]" />
             اندیکاتورهای نمودار
           </div>
           <div className="space-y-1">
@@ -336,7 +336,9 @@ export function ChartTopToolbar({
                 <span>{indicatorLabels[key]}</span>
                 <span
                   className={`h-5 w-9 rounded-full p-0.5 transition ${
-                    indicators[key] ? 'bg-cyan-500' : 'bg-[var(--nv-soft-strong)]'
+                    indicators[key]
+                      ? 'bg-[var(--nv-accent)]'
+                      : 'bg-[var(--nv-soft-strong)]'
                   }`}
                 >
                   <span

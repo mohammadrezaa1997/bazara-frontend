@@ -169,7 +169,7 @@ export function ProfessionalMarketChart({
     const dark = resolvedTheme === 'dark';
     const chart = createChart(container, {
       width: container.clientWidth,
-      height: container.clientWidth < 640 ? 600 : 720,
+      height: container.clientWidth < 640 ? 520 : 720,
       layout: {
         attributionLogo: true,
         background: { type: ColorType.Solid, color: 'transparent' },
@@ -377,7 +377,7 @@ export function ProfessionalMarketChart({
     const resizeObserver = new ResizeObserver(() => {
       chart.applyOptions({
         width: container.clientWidth,
-        height: container.clientWidth < 640 ? 600 : 720,
+        height: container.clientWidth < 640 ? 520 : 720,
       });
       updateViewport();
     });
@@ -463,12 +463,12 @@ export function ProfessionalMarketChart({
   return (
     <article
       ref={workspaceRef}
-      className="overflow-hidden rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] shadow-[var(--nv-shadow)] fullscreen:rounded-none fullscreen:border-0"
+      className="nv-card overflow-hidden rounded-2xl fullscreen:rounded-none fullscreen:border-0"
     >
       <div className="border-b border-[var(--nv-border)] p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-400/10 text-cyan-500">
+            <div className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]">
               <BarChart3 className="h-5 w-5" />
             </div>
             <div>
@@ -542,15 +542,15 @@ export function ProfessionalMarketChart({
           snapEnabled={snapEnabled}
           onToggleSnap={() => setSnapEnabled((current) => !current)}
         />
-        <div className="relative min-h-[600px] p-2 sm:p-4">
+        <div className="relative min-h-[520px] p-2 sm:min-h-[600px] sm:p-4">
           {isLoading ? (
-            <div className="absolute inset-0 z-40 flex items-center justify-center gap-3 bg-[var(--nv-overlay)] text-sm text-cyan-500">
+            <div className="absolute inset-0 z-40 flex items-center justify-center gap-3 bg-[var(--nv-overlay)] text-sm font-bold text-[var(--nv-accent)]">
               <Loader2 className="h-5 w-5 animate-spin" />
               دریافت داده و محاسبه اندیکاتورها...
             </div>
           ) : null}
           {!isLoading && points.length < 2 ? (
-            <div className="flex min-h-[580px] items-center justify-center text-sm text-[var(--nv-muted)]">
+            <div className="flex min-h-[500px] items-center justify-center text-sm text-[var(--nv-muted)] sm:min-h-[580px]">
               داده واقعی کافی برای رسم نمودار وجود ندارد.
             </div>
           ) : (

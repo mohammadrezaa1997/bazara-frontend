@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { BrandLogo } from '@/components/brand/brand-logo';
 
 function apiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof AxiosError) {
@@ -89,10 +90,10 @@ export default function AuthPage() {
         <ThemeToggle />
       </div>
 
-      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-[28px] border border-[var(--nv-border)] bg-[var(--nv-panel)] shadow-[var(--nv-shadow)] lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative hidden overflow-hidden border-l border-[var(--nv-border)] bg-gradient-to-br from-cyan-500/10 via-blue-500/[0.06] to-transparent p-10 lg:flex lg:flex-col lg:justify-between">
+      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-[var(--nv-border)] bg-[var(--nv-panel)] shadow-[var(--nv-shadow-raised)] lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative hidden overflow-hidden border-l border-[var(--nv-border)] bg-[var(--nv-soft)] p-10 lg:flex lg:flex-col lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-sm font-bold text-cyan-600 dark:text-cyan-300">
+            <div className="nv-chip nv-chip-active">
               <ShieldCheck className="h-4 w-4" />
               تصمیم‌یار هوشمند سرمایه‌گذاری
             </div>
@@ -100,8 +101,8 @@ export default function AuthPage() {
               تحلیل بازار با تمرکز بر ریسک و شواهد واقعی
             </h2>
             <p className="mt-4 max-w-lg text-base leading-9 text-[var(--nv-muted)]">
-              رمزارزها و بازار ایران را در یک محیط یکپارچه بررسی کنید و پیشنهادهای
-              قابل توضیح متناسب با پروفایل خود دریافت کنید.
+              رمزارز، بازار ایران و فارکس را در یک محیط یکپارچه بررسی کنید و
+              سبد ترکیبی چندبازاره، قابل توضیح و متناسب با پروفایل خود بسازید.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -110,8 +111,8 @@ export default function AuthPage() {
               { icon: BrainCircuit, label: 'تحلیل چندمنبعی' },
               { icon: CheckCircle2, label: 'کنترل ریسک' },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)]/75 p-4 text-center">
-                <Icon className="mx-auto h-5 w-5 text-cyan-500" />
+              <div key={label} className="rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-4 text-center shadow-sm">
+                <Icon className="mx-auto h-5 w-5 text-[var(--nv-accent)]" />
                 <p className="mt-2 text-sm font-bold text-[var(--nv-text-soft)]">{label}</p>
               </div>
             ))}
@@ -120,24 +121,22 @@ export default function AuthPage() {
 
         <section className="p-5 pt-20 sm:p-9 sm:pt-20 lg:p-10">
           <div className="mb-7 text-center lg:text-right">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-500 lg:mx-0">
-              <BrainCircuit className="h-6 w-6" />
+            <div className="flex justify-center lg:justify-start">
+              <BrandLogo href="/" subtitle="پلتفرم هوشمند تحلیل بازار و مدیریت ریسک" />
             </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-[var(--nv-text)]">BAZARA</h1>
-            <p className="mt-2 text-[15px] leading-7 text-[var(--nv-muted)]">پلتفرم هوشمند تحلیل بازار و مدیریت ریسک</p>
           </div>
 
           {/* تب‌های انتخاب حالت */}
-          <div className="mb-7 flex rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-soft)] p-1">
+          <div className="nv-toolbar mb-7 flex rounded-xl p-1">
             <button
               onClick={() => setIsLoginMode(true)}
-              className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all ${isLoginMode ? 'bg-[var(--nv-panel)] text-cyan-600 shadow-sm dark:text-cyan-300' : 'text-[var(--nv-muted)] hover:text-[var(--nv-text)]'}`}
+              className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border text-sm font-extrabold transition-all ${isLoginMode ? 'border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]' : 'border-transparent text-[var(--nv-muted)] hover:bg-[var(--nv-panel)] hover:text-[var(--nv-text)]'}`}
             >
               <LogIn className="h-4 w-4" /> ورود
             </button>
             <button
               onClick={() => setIsLoginMode(false)}
-              className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all ${!isLoginMode ? 'bg-[var(--nv-panel)] text-cyan-600 shadow-sm dark:text-cyan-300' : 'text-[var(--nv-muted)] hover:text-[var(--nv-text)]'}`}
+              className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border text-sm font-extrabold transition-all ${!isLoginMode ? 'border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]' : 'border-transparent text-[var(--nv-muted)] hover:bg-[var(--nv-panel)] hover:text-[var(--nv-text)]'}`}
             >
               <UserPlus className="h-4 w-4" /> ثبت‌نام تستر
             </button>
@@ -193,7 +192,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-6 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-3 font-black text-white shadow-lg shadow-cyan-500/20 transition-all duration-300 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50"
+              className="nv-button-primary mt-6 min-h-13 w-full disabled:cursor-wait disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isLoginMode ? 'ورود به داشبورد' : 'ساخت حساب کاربری')}
             </button>

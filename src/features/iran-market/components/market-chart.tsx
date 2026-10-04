@@ -76,10 +76,16 @@ export function MarketChart({
     if (!analysis) return [];
     const tradePlan = analysis.indicators?.composite?.trade_plan;
     const entryMin = toFiniteNumber(
-      analysis.entry_price_min ?? tradePlan?.entry_price_min,
+      analysis.entry_min ??
+        analysis.entry_price_min ??
+        tradePlan?.entry_min ??
+        tradePlan?.entry_price_min,
     );
     const entryMax = toFiniteNumber(
-      analysis.entry_price_max ?? tradePlan?.entry_price_max,
+      analysis.entry_max ??
+        analysis.entry_price_max ??
+        tradePlan?.entry_max ??
+        tradePlan?.entry_price_max,
     );
     const stopLoss = toFiniteNumber(analysis.stop_loss ?? tradePlan?.stop_loss);
     const targets = analysis.targets ?? tradePlan?.targets ?? [];

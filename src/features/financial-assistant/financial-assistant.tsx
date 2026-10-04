@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -10,13 +10,15 @@ import {
   MessageSquareText,
   Send,
   Sparkles,
+  Square,
   UserRound,
 } from 'lucide-react';
 
 import api from '@/lib/api';
+import { useAuthStore } from '@/lib/store';
 
 export const FINANCIAL_ASSISTANT_UI_VERSION =
-  'financial-assistant-ui-v1';
+  'financial-assistant-ui-v2-streaming';
 
 type ChatRole = 'user' | 'assistant';
 
@@ -45,9 +47,17 @@ interface AssistantResponse {
   resolved_assets?: ResolvedAsset[];
   needs_clarification?: boolean;
   clarification_question?: string | null;
+  context_carried?: boolean;
   sources?: AssistantSource[];
   follow_up_suggestions?: string[];
   disclaimer?: string;
+}
+
+interface ChatHistoryItem {
+  role: ChatRole;
+  content: string;
+  intent?: string;
+  resolved_assets?: ResolvedAsset[];
 }
 
 interface ChatMessage {
@@ -67,11 +77,22 @@ interface ApiFailure {
   message?: string;
 }
 
+interface AssistantStreamEvent {
+  event: 'status' | 'metadata' | 'delta' | 'done' | 'error';
+  message?: string;
+  message_id?: string;
+  delta?: string;
+  response?: Omit<AssistantResponse, 'answer'>;
+  code?: string;
+}
+
+class StreamEndpointUnavailable extends Error {}
+
 const STARTER_PROMPTS = [
   'دلار و طلای ۱۸ عیار را مقایسه کن',
   'سولانا را برای سه ماه آینده تحلیل کن',
+  'EUR/USD را با سناریوهای معتبر بررسی کن',
   'خبرهای امروز چه اثری روی بازار ایران دارند؟',
-  'چرا سکه امامی زیر نظر است؟',
 ];
 
 function safeExternalUrl(value?: string | null) {
@@ -90,12 +111,121 @@ function newLocalId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function assistantStreamUrl() {
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  ).replace(/\/$/, '');
+  return `${baseUrl}/api/market/assistant/stream/`;
+}
+
+async function responseErrorMessage(response: Response) {
+  try {
+    const payload = (await response.json()) as {
+      message?: string;
+      detail?: string;
+    };
+    return payload.message || payload.detail;
+  } catch {
+    return null;
+  }
+}
+
+async function streamAssistantResponse({
+  message,
+  history,
+  signal,
+  onEvent,
+}: {
+  message: string;
+  history: ChatHistoryItem[];
+  signal: AbortSignal;
+  onEvent: (event: AssistantStreamEvent) => void;
+}) {
+  const token = useAuthStore.getState().accessToken;
+  const requestId =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const response = await fetch(assistantStreamUrl(), {
+    method: 'POST',
+    signal,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Request-ID': requestId,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ message, history }),
+  });
+
+  if (response.status === 404 || response.status === 405) {
+    throw new StreamEndpointUnavailable();
+  }
+  if (response.status === 401) {
+    useAuthStore.getState().logout();
+    if (typeof window !== 'undefined') window.location.replace('/');
+  }
+  if (!response.ok) {
+    throw new Error(
+      (await responseErrorMessage(response)) ||
+        'دستیار مالی در حال حاضر پاسخ‌گو نیست.',
+    );
+  }
+  if (!response.body) {
+    throw new Error('مرورگر امکان دریافت پاسخ زنده را فراهم نکرد.');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let completed = false;
+
+  const consumeLine = (line: string) => {
+    const cleaned = line.trim();
+    if (!cleaned) return;
+    const event = JSON.parse(cleaned) as AssistantStreamEvent;
+    if (event.event === 'error') {
+      throw new Error(
+        event.message || 'دستیار مالی در حال حاضر پاسخ‌گو نیست.',
+      );
+    }
+    if (event.event === 'done') completed = true;
+    onEvent(event);
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+    lines.forEach(consumeLine);
+    if (done) break;
+  }
+
+  if (buffer.trim()) consumeLine(buffer);
+  if (!completed) {
+    throw new Error('ارتباط هنگام دریافت پاسخ قطع شد؛ دوباره تلاش کنید.');
+  }
+}
+
 export function FinancialAssistant() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isPending, setIsPending] = useState(false);
+  const [streamStatus, setStreamStatus] = useState('');
+  const [activeAssistantId, setActiveAssistantId] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(
+    () => () => {
+      abortControllerRef.current?.abort();
+    },
+    [],
+  );
 
   const latestSuggestions = useMemo(() => {
     const latestAssistant = [...messages]
@@ -116,30 +246,112 @@ export function FinancialAssistant() {
       role: 'user',
       content: cleaned,
     };
-    setMessages((current) => [...current, userMessage]);
+    const assistantId = newLocalId();
+    const assistantMessage: ChatMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+    };
+    setMessages((current) => [...current, userMessage, assistantMessage]);
     setInput('');
     setError(null);
     setIsPending(true);
+    setActiveAssistantId(assistantId);
+    setStreamStatus('در حال بررسی داده‌های معتبر بازار...');
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    let streamedContent = '';
+    let serverMessageId = assistantId;
+
+    const updateAssistant = (
+      updater: (item: ChatMessage) => ChatMessage,
+    ) => {
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === assistantId ? updater(item) : item,
+        ),
+      );
+    };
 
     try {
       const history = previousMessages.slice(-8).map((item) => ({
         role: item.role,
         content: item.content,
+        ...(item.response
+          ? {
+              intent: item.response.intent,
+              resolved_assets: item.response.resolved_assets,
+            }
+          : {}),
       }));
-      const { data } = await api.post<AssistantResponse>(
-        '/api/market/assistant/',
-        { message: cleaned, history },
-      );
-      setMessages((current) => [
-        ...current,
-        {
-          id: data.message_id || newLocalId(),
-          role: 'assistant',
+      try {
+        await streamAssistantResponse({
+          message: cleaned,
+          history,
+          signal: controller.signal,
+          onEvent: (event) => {
+            if (event.event === 'status' && event.message) {
+              setStreamStatus(event.message);
+              return;
+            }
+            if (event.event === 'metadata' && event.message_id) {
+              serverMessageId = event.message_id;
+              setStreamStatus('در حال آماده‌سازی پاسخ...');
+              return;
+            }
+            if (event.event === 'delta' && event.delta) {
+              streamedContent += event.delta;
+              setStreamStatus('');
+              updateAssistant((item) => ({
+                ...item,
+                content: streamedContent,
+              }));
+              return;
+            }
+            if (event.event === 'done' && event.response) {
+              const completed: AssistantResponse = {
+                ...event.response,
+                message_id:
+                  event.response.message_id || serverMessageId,
+                answer: streamedContent,
+              };
+              updateAssistant((item) => ({
+                ...item,
+                content: streamedContent,
+                response: completed,
+              }));
+            }
+          },
+        });
+      } catch (streamError) {
+        if (!(streamError instanceof StreamEndpointUnavailable)) {
+          throw streamError;
+        }
+
+        const { data } = await api.post<AssistantResponse>(
+          '/api/market/assistant/',
+          { message: cleaned, history },
+        );
+        streamedContent = data.answer;
+        updateAssistant((item) => ({
+          ...item,
           content: data.answer,
           response: data,
-        },
-      ]);
+        }));
+      }
     } catch (requestError) {
+      if (
+        requestError instanceof DOMException &&
+        requestError.name === 'AbortError'
+      ) {
+        if (!streamedContent) {
+          setMessages((current) =>
+            current.filter((item) => item.id !== assistantId),
+          );
+        }
+        return;
+      }
       const failure = requestError as ApiFailure;
       setError(
         failure.response?.data?.message ||
@@ -147,8 +359,16 @@ export function FinancialAssistant() {
           failure.message ||
           'دستیار مالی در حال حاضر پاسخ‌گو نیست.',
       );
+      if (!streamedContent) {
+        setMessages((current) =>
+          current.filter((item) => item.id !== assistantId),
+        );
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsPending(false);
+      setActiveAssistantId(null);
+      setStreamStatus('');
     }
   }
 
@@ -157,20 +377,24 @@ export function FinancialAssistant() {
     void sendMessage(input);
   }
 
+  function stopResponse() {
+    abortControllerRef.current?.abort();
+  }
+
   return (
-    <section className="overflow-hidden rounded-3xl border border-[var(--nv-border)] bg-[var(--nv-panel)] shadow-[var(--nv-shadow)]">
-      <div className="border-b border-[var(--nv-border)] bg-gradient-to-l from-cyan-500/[0.09] to-blue-500/[0.03] p-5 sm:p-6">
+    <section className="nv-card overflow-hidden rounded-2xl">
+      <div className="border-b border-[var(--nv-border)] bg-[var(--nv-soft)] p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]">
             <Bot className="h-6 w-6" />
           </span>
           <div>
             <h2 className="text-xl font-black text-[var(--nv-text)]">
-              دستیار هوشمند مالی 
+              مشاور خبره بازار
             </h2>
             <p className="mt-1 text-sm leading-7 text-[var(--nv-muted)] sm:text-[15px]">
-              سؤال خود را فارسی یا انگلیسی بنویسید؛ نام یا نماد بازار ایران و
-              رمزارز به‌صورت خودکار تشخیص داده می‌شود.
+              گفت‌وگوی پیوسته و مستند درباره بازار ایران، رمزارز و فارکس؛ با
+              درنظرگرفتن پروفایل ریسک شما.
             </p>
           </div>
         </div>
@@ -192,8 +416,8 @@ export function FinancialAssistant() {
                   <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${
                       isUser
-                        ? 'border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300'
-                        : 'border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300'
+                        ? 'border-[var(--nv-info-border)] bg-[var(--nv-info-soft)] text-[var(--nv-info)]'
+                        : 'border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]'
                     }`}
                   >
                     {isUser ? (
@@ -206,7 +430,7 @@ export function FinancialAssistant() {
                   <div
                     className={`min-w-0 max-w-[92%] rounded-2xl border p-4 sm:max-w-[86%] ${
                       isUser
-                        ? 'border-blue-500/20 bg-blue-500/[0.08]'
+                        ? 'border-[var(--nv-info-border)] bg-[var(--nv-info-soft)]'
                         : 'border-[var(--nv-border)] bg-[var(--nv-soft)]'
                     }`}
                   >
@@ -222,20 +446,42 @@ export function FinancialAssistant() {
                               <span
                                 key={`${asset.market}-${asset.symbol}`}
                                 dir="ltr"
-                                className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-700 dark:text-cyan-300"
+                                className="nv-chip-active rounded-full px-2.5 py-1 text-xs font-bold"
                               >
                                 {asset.symbol} ·{' '}
-                                {asset.market === 'iran' ? 'Iran' : 'Crypto'}
+                                {asset.market === 'iran'
+                                  ? 'بازار ایران'
+                                  : asset.market === 'forex'
+                                    ? 'فارکس'
+                                    : 'رمزارز'}
                               </span>
                             ))}
+                            {message.response.context_carried ? (
+                              <span className="nv-chip rounded-full px-2.5 py-1 text-xs font-bold">
+                                ادامه موضوع قبلی
+                              </span>
+                            ) : null}
                           </div>
                         ) : null}
 
-                        <div className="prose max-w-none text-[15px] leading-8 text-[var(--nv-text-soft)] prose-headings:mb-2 prose-headings:mt-5 prose-headings:text-[var(--nv-text)] prose-strong:text-cyan-700 dark:prose-invert dark:prose-strong:text-cyan-300 sm:text-base sm:leading-9">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
+                        {message.content ? (
+                          <div className="prose max-w-none text-[15px] leading-8 text-[var(--nv-text-soft)] prose-headings:mb-2 prose-headings:mt-5 prose-headings:text-[var(--nv-text)] prose-strong:text-[var(--nv-accent)] dark:prose-invert sm:text-base sm:leading-9">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {message.content}
+                            </ReactMarkdown>
+                            {activeAssistantId === message.id ? (
+                              <span
+                                aria-hidden="true"
+                                className="mr-1 inline-block h-5 w-1 animate-pulse rounded-full bg-[var(--nv-accent)] align-middle"
+                              />
+                            ) : null}
+                          </div>
+                        ) : activeAssistantId === message.id ? (
+                          <div className="flex min-h-10 items-center gap-2 text-sm text-[var(--nv-muted)]">
+                            <Loader2 className="h-4 w-4 animate-spin text-[var(--nv-accent)]" />
+                            {streamStatus || 'در حال آماده‌سازی پاسخ...'}
+                          </div>
+                        ) : null}
 
                         {message.response?.sources?.length ? (
                           <details className="mt-4 rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-3">
@@ -266,7 +512,7 @@ export function FinancialAssistant() {
                                         href={href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="mt-2 inline-flex min-h-9 items-center gap-1 text-sm font-bold text-cyan-700 dark:text-cyan-300"
+                                        className="mt-2 inline-flex min-h-9 items-center gap-1 text-sm font-bold text-[var(--nv-accent)] transition hover:text-[var(--nv-accent-hover)]"
                                       >
                                         مشاهده منبع
                                         <ExternalLink className="h-3.5 w-3.5" />
@@ -291,16 +537,10 @@ export function FinancialAssistant() {
               );
             })}
 
-            {isPending ? (
-              <div className="flex items-center gap-2 text-sm text-[var(--nv-muted)]">
-                <Loader2 className="h-4 w-4 animate-spin text-cyan-500" />
-                در حال بررسی داده‌های معتبر بازار...
-              </div>
-            ) : null}
           </div>
         ) : (
           <div className="mb-5 rounded-2xl border border-dashed border-[var(--nv-border)] bg-[var(--nv-soft)] p-5 text-center">
-            <MessageSquareText className="mx-auto h-8 w-8 text-cyan-500" />
+            <MessageSquareText className="mx-auto h-8 w-8 text-[var(--nv-accent)]" />
             <p className="mt-3 text-[15px] font-bold leading-7 text-[var(--nv-text)]">
               تحلیل دارایی، مقایسه بازارها، بررسی خبر و توضیح پیشنهادها
             </p>
@@ -317,7 +557,7 @@ export function FinancialAssistant() {
               type="button"
               disabled={isPending}
               onClick={() => setInput(prompt)}
-              className="min-h-10 shrink-0 rounded-full border border-[var(--nv-border)] bg-[var(--nv-soft)] px-3 text-sm font-bold text-[var(--nv-text-soft)] transition hover:border-cyan-500/30 hover:text-cyan-700 disabled:opacity-50 dark:hover:text-cyan-300"
+              className="nv-chip min-h-10 shrink-0 rounded-full px-3 text-sm font-bold disabled:opacity-50"
             >
               {prompt}
             </button>
@@ -338,11 +578,11 @@ export function FinancialAssistant() {
             rows={3}
             dir="auto"
             placeholder="مثلاً: سکه امامی چرا زیر نظر است و چه خبری روی آن اثر گذاشته؟"
-            className="min-h-28 w-full resize-y rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-field)] px-4 py-3 text-[15px] leading-7 text-[var(--nv-text)] outline-none transition placeholder:text-[var(--nv-muted)] focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 sm:text-base"
+            className="nv-field min-h-28 w-full resize-y rounded-xl px-4 py-3 text-[15px] leading-7 sm:text-base"
           />
 
           {error ? (
-            <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm leading-6 text-rose-700 dark:text-rose-300">
+            <p className="nv-status-danger rounded-xl p-3 text-sm leading-6">
               {error}
             </p>
           ) : null}
@@ -351,18 +591,25 @@ export function FinancialAssistant() {
             <p className="text-xs leading-5 text-[var(--nv-muted)]">
               Enter برای ارسال · Shift+Enter برای رفتن به خط بعد
             </p>
-            <button
-              type="submit"
-              disabled={isPending || !input.trim()}
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 px-6 font-black text-white shadow-lg shadow-blue-500/15 transition hover:from-cyan-500 hover:to-blue-500 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-            >
-              {isPending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
+            {isPending ? (
+              <button
+                type="button"
+                onClick={stopResponse}
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-6 font-bold text-rose-600 transition hover:bg-rose-500/15 dark:text-rose-300 sm:w-auto"
+              >
+                <Square className="h-4 w-4 fill-current" />
+                توقف پاسخ
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="nv-button-primary min-h-12 w-full gap-2 rounded-xl px-6 sm:w-auto"
+              >
                 <Send className="h-5 w-5" />
-              )}
-              {isPending ? 'در حال تحلیل...' : 'ارسال برای تحلیل'}
-            </button>
+                ارسال برای تحلیل
+              </button>
+            )}
           </div>
         </form>
       </div>

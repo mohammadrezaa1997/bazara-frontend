@@ -47,7 +47,7 @@ export function CryptoProfessionalChart({ symbol }: { symbol: 'BTC' | 'ETH' | 'S
   return (
     <section>
       <div className="mb-3 flex justify-end">
-        <div className="flex rounded-xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-1">
+        <div className="nv-toolbar flex rounded-xl p-1">
           {([
             ['4h', '۴ ساعته'],
             ['1day', 'روزانه'],
@@ -58,7 +58,7 @@ export function CryptoProfessionalChart({ symbol }: { symbol: 'BTC' | 'ETH' | 'S
               onClick={() => setTimeframe(value)}
               className={`rounded-lg px-3 py-2 text-xs font-bold ${
                 timeframe === value
-                  ? 'bg-cyan-500 text-slate-950'
+                  ? 'border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]'
                   : 'text-[var(--nv-muted)]'
               }`}
             >
@@ -69,7 +69,7 @@ export function CryptoProfessionalChart({ symbol }: { symbol: 'BTC' | 'ETH' | 'S
       </div>
 
       {historyQuery.isError ? (
-        <div className="mb-3 flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] p-4 text-xs leading-6 text-amber-700 dark:text-amber-200">
+        <div className="nv-status-warning mb-3 flex items-start gap-2 rounded-2xl p-4 text-xs leading-6">
           <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
           تاریخچه واقعی رمزارز دریافت نشد. نمودار ساختگی نمایش داده نمی‌شود؛ اتصال
           CoinGecko یا CRYPTO_HISTORY_UPSTREAM_PROXY_URL را بررسی کنید.

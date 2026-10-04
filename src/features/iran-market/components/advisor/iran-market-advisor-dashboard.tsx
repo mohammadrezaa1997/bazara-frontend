@@ -1,21 +1,21 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import {
   AlertTriangle,
-  ArrowRight,
   Banknote,
   BrainCircuit,
   CheckCircle2,
+  Clock3,
   Eye,
   Settings2,
   ShieldAlert,
+  ShieldCheck,
   TrendingDown,
   X,
 } from "lucide-react";
 
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { AppHeader } from "@/components/layout/app-header";
 
 import { IranMarketApiError } from "../../api/client";
 import { useGenerateIranMarketAdvice } from "../../hooks/use-iran-market";
@@ -29,7 +29,7 @@ import { formatDate, formatPercent, formatPrice } from "../../utils/formatters";
 import { AdvisorCard } from "./advisor-card";
 import { AdvisorForm } from "./advisor-form";
 
-export const ADVISOR_UI_VERSION = "responsive-theme-ui-v1";
+export const ADVISOR_UI_VERSION = "advisor-workspace-ui-v3";
 
 type BucketKey =
   | "buy_recommendations"
@@ -89,9 +89,29 @@ function getErrorMessage(error: unknown) {
     : "ساخت پیشنهاد مشاور ناموفق بود.";
 }
 
+function SummaryMetric({
+  label,
+  value,
+  tone = "text-[var(--nv-text)]",
+}: {
+  label: string;
+  value: number;
+  tone?: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-3 py-3 sm:px-4">
+      <p className="text-xs font-bold text-[var(--nv-muted)]">{label}</p>
+      <p className={`mt-1 text-xl font-black tabular-nums ${tone}`}>
+        {value.toLocaleString("fa-IR")}
+      </p>
+    </div>
+  );
+}
+
 export function IranMarketAdvisorDashboard() {
   const advisor = useGenerateIranMarketAdvice();
-  const [activeTab, setActiveTab] = useState<BucketKey>("buy_recommendations");
+  const [activeTab, setActiveTab] =
+    useState<BucketKey>("buy_recommendations");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleGenerate = (request: AdvisorRequest) => {
@@ -107,213 +127,305 @@ export function IranMarketAdvisorDashboard() {
   const result = advisor.data;
   const selectedTab = TABS.find((tab) => tab.key === activeTab) ?? TABS[0];
   const items: AdvisorItem[] = result?.[activeTab] ?? [];
+  const actionableCount = result
+    ? Number(result.summary.buy) +
+      Number(result.summary.sell) +
+      Number(result.summary.hold)
+    : 0;
 
   return (
-    <div
-      dir="rtl"
-      className="min-h-dvh bg-[var(--nv-bg)] text-[var(--nv-text)]"
-    >
-      <div
-        className="pointer-events-none fixed inset-0 overflow-hidden"
-        aria-hidden
-      >
-        <div className="absolute -right-48 -top-48 h-[560px] w-[560px] rounded-full bg-cyan-500/[0.06] blur-3xl" />
-        <div className="absolute -left-48 top-1/3 h-[480px] w-[480px] rounded-full bg-violet-500/[0.045] blur-3xl" />
-      </div>
+    <div dir="rtl" className="nv-page nv-mobile-safe text-[var(--nv-text)]">
+      <AppHeader
+        active="iran"
+        badge="ADVISOR"
+        subtitle="مشاور بازار ایران"
+        maxWidthClass="max-w-[1500px]"
+      />
 
-      <header className="sticky top-0 z-40 border-b border-[var(--nv-border)] bg-[var(--nv-overlay)] backdrop-blur-xl">
-        <div className="mx-auto flex min-h-16 max-w-[1540px] items-center justify-between gap-3 px-3 sm:min-h-20 sm:px-6 lg:px-10">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-500 sm:h-11 sm:w-11">
-              <BrainCircuit className="h-5 w-5" />
+      <main className="mx-auto w-full max-w-[1500px] px-3 py-4 sm:px-6 sm:py-7 lg:px-10 lg:py-8">
+        <section className="mb-4 overflow-hidden rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] shadow-[var(--nv-shadow)] sm:mb-6">
+          <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-start gap-4">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)] sm:h-14 sm:w-14">
+                <BrainCircuit className="h-6 w-6" />
+              </span>
+              <div className="min-w-0">
+                <p className="nv-kicker">دستیار تصمیم‌گیری بازار ایران</p>
+                <h1 className="mt-1.5 text-xl font-black tracking-tight text-[var(--nv-text)] sm:text-2xl lg:text-[28px]">
+                  پیشنهاد روشن، فقط با داده قابل اتکا
+                </h1>
+                <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--nv-muted)] sm:text-[15px]">
+                  قیمت، تحلیل تکنیکال، خبر و شرایط کلان کنار هم ارزیابی می‌شوند؛
+                  اگر داده کافی نباشد، به‌جای پیشنهاد عجولانه دلیل انتظار را
+                  می‌بینید.
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1 className="truncate text-base font-black text-[var(--nv-text)] sm:text-lg">
-                مشاور خبره بازار ایران
-              </h1>
-              <p className="mt-0.5 hidden text-sm text-[var(--nv-muted)] sm:block">
-                تصمیم قابل توضیح بر پایه تکنیکال، خبر، ژئوپلیتیک و اقتصاد کلان
-              </p>
+
+            <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
+              <span className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--nv-positive-border)] bg-[var(--nv-positive-soft)] px-3 text-xs font-black text-[var(--nv-positive)]">
+                <ShieldCheck className="h-4 w-4" />
+                کنترل کیفیت داده
+              </span>
+              <span className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-3 text-xs font-black text-[var(--nv-text-soft)]">
+                <Clock3 className="h-4 w-4" />
+                پایش تازگی قیمت
+              </span>
             </div>
           </div>
+        </section>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
-            <Link
-              href="/iran-market"
-              className="grid h-11 w-11 place-items-center rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] text-[var(--nv-text-soft)] transition hover:border-cyan-500/30 hover:text-cyan-500 sm:flex sm:w-auto sm:gap-2 sm:px-4 sm:text-sm sm:font-bold"
-              aria-label="بازگشت به بازار"
-            >
-              <ArrowRight className="h-4 w-4" />
-              <span className="hidden sm:inline">بازگشت به بازار</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative mx-auto max-w-[1540px] px-3 py-4 sm:px-6 sm:py-7 lg:px-10 xl:grid xl:grid-cols-[370px_minmax(0,1fr)] xl:items-start xl:gap-7 xl:py-9">
-        <button
-          type="button"
-          onClick={() => setIsFormOpen(true)}
-          className="mb-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-500 to-blue-600 px-4 text-base font-black text-white shadow-lg shadow-cyan-500/10 xl:hidden"
-          aria-expanded={isFormOpen}
+        <div
+          dir="ltr"
+          className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_23rem] xl:items-start xl:gap-6"
         >
-          <Settings2 className="h-5 w-5" />
-          تنظیم بودجه و ساخت پیشنهاد
-        </button>
-
-        {isFormOpen ? (
-          <button
-            type="button"
-            aria-label="بستن فرم"
-            onClick={() => setIsFormOpen(false)}
-            className="fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-sm xl:hidden"
-          />
-        ) : null}
-
-        <aside
-          className={`${
-            isFormOpen
-              ? "fixed inset-x-2 bottom-2 top-16 z-[60] block overflow-y-auto rounded-[26px] bg-[var(--nv-bg)] p-2 shadow-2xl"
-              : "hidden"
-          } nv-scrollbar safe-bottom xl:sticky xl:top-24 xl:z-10 xl:block xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:rounded-none xl:bg-transparent xl:p-0 xl:shadow-none`}
-        >
-          <div className="mb-2 flex items-center justify-between px-2 py-1 xl:hidden">
-            <p className="text-base font-black">تنظیمات پیشنهاد</p>
-            <button
-              type="button"
-              onClick={() => setIsFormOpen(false)}
-              className="grid h-11 w-11 place-items-center rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)]"
-              aria-label="بستن"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <AdvisorForm
-            isPending={advisor.isPending}
-            onSubmit={handleGenerate}
-          />
-          <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/[0.07] p-4 text-sm leading-7 text-amber-700 dark:text-amber-100/80">
-            این ابزار تضمین سود نیست. نقاط معامله فقط وقتی نمایش داده می‌شوند که
-            تحلیل معتبر و برنامه عددی کامل باشد.
-          </div>
-        </aside>
-
-        <section className="min-w-0">
-          {!result && !advisor.isError ? (
-            <div className="flex min-h-[440px] flex-col items-center justify-center rounded-[28px] border border-dashed border-[var(--nv-border-strong)] bg-[var(--nv-panel)] px-5 text-center shadow-[var(--nv-shadow)] sm:min-h-[560px] sm:px-8">
-              <BrainCircuit className="h-12 w-12 text-cyan-500/50" />
-              <h2 className="mt-5 text-xl font-black sm:text-2xl">
-                آماده ساخت پیشنهاد واقعی
-              </h2>
-              <p className="mt-3 max-w-xl text-[15px] leading-8 text-[var(--nv-muted)] sm:text-base">
-                بودجه، سطح ریسک و نمادهای مدنظر را وارد کنید. اگر داده کافی
-                نباشد، سیستم صادقانه «زیرنظر» یا «عدم ورود» اعلام می‌کند.
-              </p>
-            </div>
-          ) : null}
-
-          {advisor.isError ? (
-            <div className="rounded-[28px] border border-rose-500/25 bg-rose-500/[0.07] p-6 text-center sm:p-8">
-              <AlertTriangle className="mx-auto h-9 w-9 text-rose-500" />
-              <h2 className="mt-4 text-lg font-black">
-                مشاور نتوانست پیشنهاد تولید کند
-              </h2>
-              <p className="mt-2 text-[15px] leading-8 text-rose-700 dark:text-rose-100/80">
-                {getErrorMessage(advisor.error)}
-              </p>
-            </div>
-          ) : null}
-
-          {result ? (
-            <div className="space-y-4 sm:space-y-5">
-              <div
-                className={`rounded-[26px] border p-4 sm:p-6 ${
-                  result.status === "actionable"
-                    ? "border-emerald-500/20 bg-emerald-500/[0.07]"
-                    : "border-amber-500/20 bg-amber-500/[0.07]"
-                }`}
+          <section dir="rtl" className="min-w-0 xl:col-start-1 xl:row-start-1">
+            <div className="mb-4 xl:hidden">
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(true)}
+                className="nv-button-primary w-full"
+                aria-expanded={isFormOpen}
               >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-[var(--nv-muted)]">
-                      جمع‌بندی مشاور
-                    </p>
-                    <h2 className="mt-2 text-lg font-black leading-8 sm:text-xl">
-                      {result.summary.message}
-                    </h2>
-                    <p className="mt-2 text-sm text-[var(--nv-muted)]">
-                      {result.coverage.evaluated_assets} دارایی ارزیابی شد ·{" "}
-                      {formatDate(result.generated_at)}
-                    </p>
-                    {result.cycle ? (
-                      <p className="mt-1 text-sm text-[var(--nv-muted)]">
-                        بازبینی بعدی {formatDate(result.cycle.next_review_at)} ·
-                        بازتنظیم سبد {formatDate(result.cycle.next_rebalance_at)}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] px-4 py-3 sm:block sm:min-w-40 sm:text-left">
-                    <p className="text-xs text-[var(--nv-muted)]">ذخیره نقد</p>
+                <Settings2 className="h-5 w-5" />
+                تنظیم بودجه و ساخت پیشنهاد
+              </button>
+            </div>
+
+            {!result && !advisor.isError ? (
+              <div className="nv-card overflow-hidden rounded-2xl">
+                <div className="border-b border-[var(--nv-border)] p-5 sm:p-7">
+                  <div className="flex items-start gap-4">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--nv-soft-strong)] text-[var(--nv-accent)]">
+                      <Settings2 className="h-5 w-5" />
+                    </span>
                     <div>
-                      <p className="text-lg font-black sm:mt-1">
-                        {formatPercent(result.summary.cash_reserve_percent)}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--nv-muted)]">
-                        {formatPrice(result.summary.cash_reserve_amount)} تومان
+                      <h2 className="text-lg font-black text-[var(--nv-text)] sm:text-xl">
+                        پیشنهاد شخصی شما هنوز ساخته نشده است
+                      </h2>
+                      <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--nv-muted)] sm:text-[15px]">
+                        بودجه، سطح ریسک و بازارهای مدنظر را مشخص کنید. نتیجه در
+                        پنج وضعیت شفاف نمایش داده می‌شود و هر تصمیم توضیح قابل
+                        بررسی دارد.
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="nv-scrollbar sticky top-[65px] z-30 flex gap-2 overflow-x-auto rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-overlay)] p-2 backdrop-blur-xl sm:top-[81px]">
-                {TABS.map((tab) => {
-                  const TabIcon = tab.icon;
-                  const count = Number(result.summary[tab.countKey]);
-                  return (
-                    <button
-                      type="button"
-                      key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`flex min-h-11 min-w-max items-center gap-2 rounded-xl px-4 text-sm font-black transition ${
-                        activeTab === tab.key
-                          ? "bg-cyan-500 text-white shadow-sm"
-                          : "text-[var(--nv-muted)] hover:bg-[var(--nv-soft)] hover:text-[var(--nv-text)]"
-                      }`}
-                    >
-                      <TabIcon className="h-4 w-4" />
-                      {tab.label}
-                      <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-black/25">
-                        {count}
+                <div className="grid gap-px bg-[var(--nv-border)] sm:grid-cols-3">
+                  {[
+                    ["۱", "تنظیم ورودی", "بودجه و دارایی‌های فعلی"],
+                    ["۲", "ارزیابی داده", "قیمت، تکنیکال و خبر"],
+                    ["۳", "نمایش تصمیم", "اقدام، انتظار یا عدم ورود"],
+                  ].map(([number, title, description]) => (
+                    <div key={number} className="bg-[var(--nv-panel)] p-4 sm:p-5">
+                      <span className="inline-grid h-7 w-7 place-items-center rounded-lg bg-[var(--nv-accent-soft)] text-xs font-black text-[var(--nv-accent)]">
+                        {number}
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {items.length ? (
-                <div className="grid gap-4 2xl:grid-cols-2">
-                  {items.map((item) => (
-                    <AdvisorCard
-                      key={`${selectedTab.key}-${item.symbol}`}
-                      item={item}
-                      action={selectedTab.action}
-                    />
+                      <p className="mt-3 text-sm font-black text-[var(--nv-text)]">
+                        {title}
+                      </p>
+                      <p className="mt-1 text-xs leading-6 text-[var(--nv-muted)]">
+                        {description}
+                      </p>
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <div className="rounded-[26px] border border-dashed border-[var(--nv-border-strong)] bg-[var(--nv-panel)] p-10 text-center text-base text-[var(--nv-muted)]">
-                  در دسته «{selectedTab.label}» موردی وجود ندارد.
-                </div>
-              )}
-
-              <div className="rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel)] p-4 text-sm leading-7 text-[var(--nv-muted)]">
-                {result.disclaimer}
               </div>
-            </div>
+            ) : null}
+
+            {advisor.isError ? (
+              <div className="nv-status-danger rounded-2xl p-6 text-center sm:p-8">
+                <AlertTriangle className="mx-auto h-9 w-9" />
+                <h2 className="mt-4 text-lg font-black">
+                  مشاور نتوانست پیشنهاد تولید کند
+                </h2>
+                <p className="mt-2 text-[15px] leading-8">
+                  {getErrorMessage(advisor.error)}
+                </p>
+              </div>
+            ) : null}
+
+            {result ? (
+              <div className="space-y-4 sm:space-y-5" aria-live="polite">
+                <section className="nv-card overflow-hidden rounded-2xl">
+                  <div className="flex flex-col gap-5 border-b border-[var(--nv-border)] p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-black ${
+                            result.status === "actionable"
+                              ? "nv-status-success"
+                              : "nv-status-warning"
+                          }`}
+                        >
+                          {result.status === "actionable" ? (
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                          {result.status === "actionable"
+                            ? "فرصت قابل اقدام"
+                            : "فعلاً نیازمند پایش"}
+                        </span>
+                        <span className="text-xs font-bold text-[var(--nv-muted)]">
+                          {result.coverage.evaluated_assets.toLocaleString("fa-IR")} دارایی بررسی شد
+                        </span>
+                      </div>
+                      <h2 className="mt-3 max-w-3xl text-lg font-black leading-8 text-[var(--nv-text)] sm:text-xl sm:leading-9">
+                        {result.summary.message}
+                      </h2>
+                      <p className="mt-2 text-xs leading-6 text-[var(--nv-muted)] sm:text-sm">
+                        آخرین ارزیابی: {formatDate(result.generated_at)}
+                        {result.cycle
+                          ? ` · بازبینی بعدی ${formatDate(result.cycle.next_review_at)}`
+                          : ""}
+                      </p>
+                    </div>
+
+                    <div className="flex min-w-full items-center justify-between rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-4 py-3 lg:min-w-52 lg:block lg:text-right">
+                      <div>
+                        <p className="text-xs font-bold text-[var(--nv-muted)]">
+                          ذخیره نقد پیشنهادی
+                        </p>
+                        <p className="mt-1 text-xl font-black text-[var(--nv-text)]">
+                          {formatPercent(result.summary.cash_reserve_percent)}
+                        </p>
+                      </div>
+                      <p className="text-sm font-bold text-[var(--nv-text-soft)] lg:mt-2">
+                        {formatPrice(result.summary.cash_reserve_amount)} تومان
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-5 sm:p-5">
+                    <SummaryMetric
+                      label="خرید"
+                      value={Number(result.summary.buy)}
+                      tone="text-[var(--nv-positive)]"
+                    />
+                    <SummaryMetric
+                      label="فروش"
+                      value={Number(result.summary.sell)}
+                      tone="text-[var(--nv-danger)]"
+                    />
+                    <SummaryMetric
+                      label="نگهداری"
+                      value={Number(result.summary.hold)}
+                      tone="text-[var(--nv-info)]"
+                    />
+                    <SummaryMetric
+                      label="عدم ورود"
+                      value={Number(result.summary.avoid)}
+                      tone="text-[var(--nv-warning)]"
+                    />
+                    <SummaryMetric
+                      label="زیرنظر"
+                      value={Number(result.summary.watch)}
+                      tone="text-[var(--nv-accent)]"
+                    />
+                  </div>
+                </section>
+
+                <div className="nv-scrollbar sticky top-[65px] z-30 overflow-x-auto rounded-xl border border-[var(--nv-border)] bg-[var(--nv-overlay)] p-1.5 shadow-[var(--nv-shadow)] backdrop-blur-xl sm:top-[81px]">
+                  <div className="flex min-w-max gap-1.5 sm:grid sm:min-w-0 sm:grid-cols-5">
+                    {TABS.map((tab) => {
+                      const TabIcon = tab.icon;
+                      const count = Number(result.summary[tab.countKey]);
+                      return (
+                        <button
+                          type="button"
+                          key={tab.key}
+                          onClick={() => setActiveTab(tab.key)}
+                          className={`flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black transition sm:min-w-0 ${
+                            activeTab === tab.key
+                              ? "border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]"
+                              : "border-transparent text-[var(--nv-muted)] hover:bg-[var(--nv-soft)] hover:text-[var(--nv-text)]"
+                          }`}
+                        >
+                          <TabIcon className="h-4 w-4 shrink-0" />
+                          <span>{tab.label}</span>
+                          <span className="grid h-6 min-w-6 place-items-center rounded-md bg-[var(--nv-panel)] px-1.5 text-xs tabular-nums text-[var(--nv-text-soft)]">
+                            {count.toLocaleString("fa-IR")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {items.length ? (
+                  <div className="grid min-w-0 gap-4">
+                    {items.map((item) => (
+                      <AdvisorCard
+                        key={`${selectedTab.key}-${item.symbol}`}
+                        item={item}
+                        action={selectedTab.action}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="nv-card rounded-2xl p-8 text-center sm:p-10">
+                    <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-[var(--nv-soft)] text-[var(--nv-muted)]">
+                      <Eye className="h-5 w-5" />
+                    </span>
+                    <p className="mt-3 text-base font-black text-[var(--nv-text)]">
+                      در دسته «{selectedTab.label}» موردی وجود ندارد
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-[var(--nv-muted)]">
+                      {actionableCount === 0
+                        ? "این نتیجه طبیعی است؛ مشاور در نبود فرصت معتبر، نقد ماندن را ترجیح می‌دهد."
+                        : "برای مشاهده موارد موجود، یکی از دسته‌های دارای عدد را انتخاب کنید."}
+                    </p>
+                  </div>
+                )}
+
+                <p className="rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-4 py-3 text-xs leading-6 text-[var(--nv-muted)] sm:text-sm sm:leading-7">
+                  {result.disclaimer}
+                </p>
+              </div>
+            ) : null}
+          </section>
+
+          {isFormOpen ? (
+            <button
+              type="button"
+              aria-label="بستن فرم"
+              onClick={() => setIsFormOpen(false)}
+              className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm xl:hidden"
+            />
           ) : null}
-        </section>
+
+          <aside
+            dir="rtl"
+            className={`min-w-0 xl:col-start-2 xl:row-start-1 ${
+              isFormOpen
+                ? "fixed inset-x-2 bottom-2 top-16 z-[60] block overflow-y-auto rounded-2xl bg-[var(--nv-bg)] p-2 shadow-[var(--nv-shadow-raised)]"
+                : "hidden"
+            } nv-scrollbar safe-bottom xl:sticky xl:top-24 xl:z-10 xl:block xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:rounded-none xl:bg-transparent xl:p-0 xl:shadow-none`}
+          >
+            <div className="mb-2 flex items-center justify-between px-2 py-1 xl:hidden">
+              <p className="text-base font-black">تنظیمات پیشنهاد</p>
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(false)}
+                className="nv-icon-button"
+                aria-label="بستن"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <AdvisorForm
+              isPending={advisor.isPending}
+              onSubmit={handleGenerate}
+            />
+
+            <div className="mt-3 rounded-xl border border-[var(--nv-warning-border)] bg-[var(--nv-warning-soft)] p-3.5 text-xs leading-6 text-[var(--nv-warning)]">
+              این خروجی ابزار پشتیبان تصمیم است. برنامه معامله فقط با قیمت تازه
+              و تحلیل عددی کامل نمایش داده می‌شود.
+            </div>
+          </aside>
+        </div>
       </main>
     </div>
   );

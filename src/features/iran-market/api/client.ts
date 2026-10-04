@@ -9,6 +9,7 @@ import type {
   AssetListParams,
   IranMarketAnalysis,
   IranMarketAsset,
+  IranMarketCompositeAnalysisResponse,
   IranMarketOpsHealth,
   IranMarketOverview,
   IranMarketPrice,
@@ -137,9 +138,31 @@ export const iranMarketApi = {
 
   getCompositeAnalysis: (symbol: string) =>
     request(async () => {
-      const { data } = await api.get<IranMarketAnalysis>(
+      const { data } = await api.get<
+        IranMarketAnalysis | IranMarketCompositeAnalysisResponse
+      >(
         `${BASE_PATH}/analysis/composite/${encodeSymbol(symbol)}/`,
       );
+      if ('analysis' in data) {
+        const composite = data.analysis.indicators?.composite ?? {};
+        return {
+          ...data.analysis,
+          indicators: {
+            ...data.analysis.indicators,
+            composite: {
+              ...composite,
+              components: data.components ?? composite.components,
+              decision_guard:
+                data.decision_guard ?? composite.decision_guard,
+              trade_plan: data.trade_plan ?? composite.trade_plan,
+              data_quality_score:
+                data.data_quality_score ?? composite.data_quality_score,
+              conflict_score:
+                data.conflict_score ?? composite.conflict_score,
+            },
+          },
+        };
+      }
       return data;
     }),
 
@@ -193,4 +216,3 @@ export const iranMarketApi = {
       return data;
     }),
 };
-

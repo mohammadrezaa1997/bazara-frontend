@@ -68,6 +68,8 @@ export interface IranMarketAsset {
 export interface TradePlan {
   entry_status?: string;
   entry_reason?: string;
+  entry_min?: DecimalValue | null;
+  entry_max?: DecimalValue | null;
   entry_price_min?: DecimalValue | null;
   entry_price_max?: DecimalValue | null;
   stop_loss?: DecimalValue | null;
@@ -104,6 +106,8 @@ export interface IranMarketAnalysis {
     composite?: CompositeDetails;
     [key: string]: unknown;
   };
+  entry_min?: DecimalValue | null;
+  entry_max?: DecimalValue | null;
   entry_price_min?: DecimalValue | null;
   entry_price_max?: DecimalValue | null;
   stop_loss?: DecimalValue | null;
@@ -111,6 +115,15 @@ export interface IranMarketAnalysis {
   analyzed_at: string;
   valid_until: string;
   is_valid?: boolean;
+}
+
+export interface IranMarketCompositeAnalysisResponse {
+  analysis: IranMarketAnalysis;
+  components?: Record<string, unknown>;
+  decision_guard?: DecisionGuard;
+  trade_plan?: TradePlan;
+  data_quality_score?: number | null;
+  conflict_score?: number | null;
 }
 
 export interface AdvisorHoldingInput {
@@ -188,6 +201,11 @@ export interface AdvisorItem {
   trend?: IranMarketTrend;
   reason_code?: string;
   reason?: string;
+  evidence_status?:
+    | "waiting_for_fresh_price"
+    | "waiting_for_valid_composite"
+    | string;
+  evidence_note?: string | null;
   analysis_detail?: string | null;
   analysis_engine_note?: string | null;
   decision_explanation?: string | null;

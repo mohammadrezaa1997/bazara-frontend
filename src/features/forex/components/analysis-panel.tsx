@@ -21,12 +21,12 @@ interface AnalysisPanelProps {
 }
 
 const decisionStyles = {
-  buy: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
-  sell: 'border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-300',
+  buy: 'nv-status-success',
+  sell: 'nv-status-danger',
   watch:
-    'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    'nv-status-warning',
   no_trade:
-    'border-slate-500/20 bg-slate-500/10 text-[var(--nv-muted)]',
+    'border-[var(--nv-border-strong)] bg-[var(--nv-soft-strong)] text-[var(--nv-text-soft)]',
 };
 
 function ScoreCard({
@@ -42,8 +42,8 @@ function ScoreCard({
   );
 
   return (
-    <div className="rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-soft)] p-3.5">
-      <div className="flex items-center justify-between text-xs text-[var(--nv-muted)]">
+    <div className="nv-surface rounded-xl p-3.5">
+      <div className="flex items-center justify-between text-sm font-bold text-[var(--nv-muted)]">
         <span>{label}</span>
         <strong className="text-[var(--nv-text)]">
           {normalized}
@@ -52,7 +52,7 @@ function ScoreCard({
 
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--nv-soft-strong)]">
         <div
-          className="h-full rounded-full bg-gradient-to-l from-cyan-400 to-blue-500"
+          className="h-full rounded-full bg-[var(--nv-accent)]"
           style={{ width: `${normalized}%` }}
         />
       </div>
@@ -67,7 +67,7 @@ export function AnalysisPanel({
 }: AnalysisPanelProps) {
   if (isLoading) {
     return (
-      <aside className="rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] p-5 text-sm text-[var(--nv-muted)] shadow-[var(--nv-shadow)]">
+      <aside className="nv-card rounded-2xl p-5 text-sm text-[var(--nv-muted)]">
         در حال دریافت آخرین تحلیل...
       </aside>
     );
@@ -75,7 +75,7 @@ export function AnalysisPanel({
 
   if (!analysis) {
     return (
-      <aside className="rounded-[26px] border border-amber-500/20 bg-amber-500/[0.06] p-5 text-sm leading-7 text-amber-800 dark:text-amber-200">
+      <aside className="nv-status-warning rounded-2xl p-5 text-sm leading-7">
         برای این جفت‌ارز هنوز تحلیل معتبری ثبت نشده است.
       </aside>
     );
@@ -86,10 +86,10 @@ export function AnalysisPanel({
 
   return (
     <aside className="space-y-4">
-      <section className="rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] p-5 shadow-[var(--nv-shadow)]">
+      <section className="nv-card rounded-2xl p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-bold text-cyan-600 dark:text-cyan-300">
+            <p className="nv-kicker">
               خروجی موتور تحلیل
             </p>
 
@@ -99,7 +99,7 @@ export function AnalysisPanel({
           </div>
 
           <span
-            className={`rounded-xl border px-3 py-2 text-xs font-black ${
+            className={`rounded-xl border px-3 py-2 text-sm font-black ${
               decisionStyles[analysis.decision]
             }`}
           >
@@ -128,13 +128,13 @@ export function AnalysisPanel({
           />
         </div>
       </section>
-      <section className="rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] p-5 shadow-[var(--nv-shadow)]">
+      <section className="nv-card rounded-2xl p-5">
         <div className="flex items-center gap-2 text-sm font-black text-[var(--nv-text)]">
-          <Activity className="h-4 w-4 text-cyan-500" />
+          <Activity className="h-4 w-4 text-[var(--nv-accent)]" />
           وضعیت چندتایم‌فریمی
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
           {[
             ['D1', analysis.d1_trend_display],
             ['H4', analysis.h4_trend_display],
@@ -146,7 +146,7 @@ export function AnalysisPanel({
             >
               <div
                 dir="ltr"
-                className="font-black text-cyan-500"
+                className="font-black text-[var(--nv-accent)]"
               >
                 {label}
               </div>
@@ -159,13 +159,13 @@ export function AnalysisPanel({
         </div>
       </section>
 
-      <section className="rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] p-5 shadow-[var(--nv-shadow)]">
+      <section className="nv-card rounded-2xl p-5">
         <div className="flex items-center gap-2 text-sm font-black text-[var(--nv-text)]">
-          <Gauge className="h-4 w-4 text-violet-500" />
+          <Gauge className="h-4 w-4 text-[var(--nv-info)]" />
           اندیکاتورهای {timeframe.toUpperCase()}
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
           {[
             ['RSI 14', timeframeIndicators?.rsi14],
             ['ADX 14', timeframeIndicators?.adx14],
@@ -196,36 +196,36 @@ export function AnalysisPanel({
         </div>
       </section>
 
-      <section className="rounded-[26px] border border-[var(--nv-border)] bg-[var(--nv-panel)] p-5 shadow-[var(--nv-shadow)]">
+      <section className="nv-card rounded-2xl p-5">
         <div className="flex items-center gap-2 text-sm font-black text-[var(--nv-text)]">
-          <Target className="h-4 w-4 text-emerald-500" />
+          <Target className="h-4 w-4 text-[var(--nv-positive)]" />
           برنامه معامله
         </div>
 
         {analysis.is_trade_ready ? (
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.06] p-3">
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div className="nv-status-info rounded-xl p-3">
               <div className="text-[var(--nv-muted)]">
                 محدوده ورود
               </div>
 
               <div
                 dir="ltr"
-                className="mt-1 font-black text-cyan-600 dark:text-cyan-300"
+                className="mt-1 font-black"
               >
                 {formatForexPrice(analysis.entry_min)} –{' '}
                 {formatForexPrice(analysis.entry_max)}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.06] p-3">
+            <div className="nv-status-danger rounded-xl p-3">
               <div className="text-[var(--nv-muted)]">
                 حد ضرر
               </div>
 
               <div
                 dir="ltr"
-                className="mt-1 font-black text-rose-600 dark:text-rose-300"
+                className="mt-1 font-black"
               >
                 {formatForexPrice(analysis.stop_loss)}
               </div>
@@ -234,7 +234,7 @@ export function AnalysisPanel({
             {analysis.targets.map((target, index) => (
               <div
                 key={`${target}-${index}`}
-                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-3"
+                className="nv-status-success rounded-xl p-3"
               >
                 <div className="text-[var(--nv-muted)]">
                   هدف {index + 1}
@@ -242,7 +242,7 @@ export function AnalysisPanel({
 
                 <div
                   dir="ltr"
-                  className="mt-1 font-black text-emerald-600 dark:text-emerald-300"
+                  className="mt-1 font-black"
                 >
                   {formatForexPrice(target)}
                 </div>
@@ -250,7 +250,7 @@ export function AnalysisPanel({
             ))}
           </div>
         ) : (
-          <div className="mt-4 flex gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-xs leading-6 text-amber-800 dark:text-amber-200">
+          <div className="nv-status-warning mt-4 flex gap-2 rounded-xl p-3 text-sm leading-7">
             <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
             تا زمان تکمیل هم‌راستایی و کنترل ریسک، نقطه
             ورود قطعی نمایش داده نمی‌شود.
@@ -258,8 +258,8 @@ export function AnalysisPanel({
         )}
       </section>
 
-      <div className="flex items-start gap-2 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.05] p-4 text-xs leading-6 text-[var(--nv-muted)]">
-        <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+      <div className="nv-status-success flex items-start gap-2 rounded-xl p-4 text-sm leading-7">
+        <ShieldCheck className="mt-1 h-4 w-4 shrink-0" />
         تحلیل تضمین سود نیست و حجم معامله باید با ارزش پیپ
         و مشخصات بروکر محاسبه شود.
       </div>

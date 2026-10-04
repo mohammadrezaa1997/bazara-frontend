@@ -48,8 +48,8 @@ export function MarketTicker({
               onClick={() => onSelect(asset.symbol)}
               className={`nv-mobile-snap flex min-w-[178px] items-center justify-between gap-3 rounded-2xl border px-3.5 py-3 text-right transition sm:min-w-[210px] sm:px-4 ${
                 selected
-                  ? 'border-cyan-500/35 bg-cyan-500/[0.09] shadow-[0_0_28px_rgba(34,211,238,0.08)]'
-                  : 'border-[var(--nv-border)] bg-[var(--nv-soft)] hover:border-cyan-500/20'
+                  ? 'border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] shadow-sm ring-1 ring-[var(--nv-accent-border)]'
+                  : 'border-[var(--nv-border)] bg-[var(--nv-soft)] hover:border-[var(--nv-border-strong)] hover:bg-[var(--nv-soft-strong)]'
               }`}
             >
               <div className="min-w-0">
@@ -58,7 +58,7 @@ export function MarketTicker({
                 </p>
                 <p className="mt-1 whitespace-nowrap text-sm font-black text-[var(--nv-text)] sm:text-base">
                   {formatPrice(price?.price)}
-                  <span className="mr-1 text-[10px] font-medium text-[var(--nv-muted)]">
+                  <span className="mr-1 text-xs font-bold text-[var(--nv-muted)]">
                     {unitLabel(asset.price_unit)}
                   </span>
                 </p>
@@ -66,9 +66,9 @@ export function MarketTicker({
               <div
                 className={`flex items-center gap-1 text-xs font-bold ${
                   tone === 'positive'
-                    ? 'text-emerald-400'
+                    ? 'text-[var(--nv-positive)]'
                     : tone === 'negative'
-                      ? 'text-rose-400'
+                      ? 'text-[var(--nv-danger)]'
                       : 'text-[var(--nv-muted)]'
                 }`}
               >

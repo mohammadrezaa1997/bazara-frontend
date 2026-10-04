@@ -20,19 +20,19 @@ const stanceMeta = {
         label: 'هم‌نظر با تحلیل رسمی',
         Icon: CheckCircle2,
         style:
-            'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+            'nv-status-success',
     },
     cautious: {
         label: 'نیازمند احتیاط',
         Icon: AlertTriangle,
         style:
-            'border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-300',
+            'nv-status-warning',
     },
     avoid: {
         label: 'پیشنهاد عدم ورود',
         Icon: ShieldAlert,
         style:
-            'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+            'nv-status-danger',
     },
 };
 
@@ -61,7 +61,7 @@ function PairName({ value }: { value?: string }) {
     return (
         <span
             dir="ltr"
-            className="mr-2 inline-block text-violet-600 dark:text-violet-300"
+            className="mr-2 inline-block text-[var(--nv-accent)]"
         >
             {value}
         </span>
@@ -75,7 +75,7 @@ export function AIAdviceCard({
 }: AIAdviceCardProps) {
     if (isLoading) {
         return (
-            <section className="flex min-h-36 items-center justify-center gap-3 rounded-[28px] border border-violet-500/20 bg-violet-500/[0.045] p-6 text-sm font-bold text-violet-600 dark:text-violet-300 sm:text-base">
+            <section className="nv-card flex min-h-36 items-center justify-center gap-3 rounded-2xl p-6 text-sm font-bold text-[var(--nv-accent)] sm:text-base">
                 <Loader2 className="h-5 w-5 animate-spin" />
 
                 <span>
@@ -89,14 +89,14 @@ export function AIAdviceCard({
 
     if (!advice) {
         return (
-            <section className="rounded-[28px] border border-violet-500/20 bg-violet-500/[0.045] p-6 sm:p-8">
+            <section className="nv-card rounded-2xl p-6 sm:p-8">
                 <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-violet-500/25 bg-violet-500/10 text-violet-500">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]">
                         <BrainCircuit className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <p className="text-xs font-bold text-violet-600 dark:text-violet-300">
+                        <p className="nv-kicker">
                             مشاور تحلیلی BAZARA
                         </p>
 
@@ -118,14 +118,14 @@ export function AIAdviceCard({
 
     if (advice.status === 'unavailable') {
         return (
-            <section className="rounded-[28px] border border-amber-500/25 bg-amber-500/[0.065] p-6 sm:p-8">
+            <section className="nv-status-warning rounded-2xl p-6 sm:p-8">
                 <div className="flex items-start gap-3">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-300">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--nv-warning-border)] bg-[var(--nv-panel)] text-[var(--nv-warning)]">
                         <AlertTriangle className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <h2 className="text-lg font-black text-amber-800 dark:text-amber-300 sm:text-xl">
+                        <h2 className="text-lg font-black sm:text-xl">
                             تفسیر هوش مصنوعی موقتاً در دسترس نیست
                         </h2>
 
@@ -149,15 +149,15 @@ export function AIAdviceCard({
         advice.confirmation_conditions ?? [];
 
     return (
-        <section className="rounded-[28px] border border-violet-500/25 bg-gradient-to-br from-violet-500/[0.09] via-[var(--nv-panel)] to-cyan-500/[0.045] p-5 shadow-[var(--nv-shadow)] sm:p-7 lg:p-8">
+        <section className="nv-card rounded-2xl p-5 sm:p-7 lg:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-violet-500/25 bg-violet-500/10 text-violet-500">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]">
                         <BrainCircuit className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <p className="text-xs font-bold text-violet-600 dark:text-violet-300">
+                        <p className="nv-kicker">
                             مشاور تحلیلی BAZARA
                         </p>
 
@@ -176,8 +176,8 @@ export function AIAdviceCard({
                 </span>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-violet-500/15 bg-[var(--nv-soft)] p-4 sm:p-5">
-                <p className="text-xs font-black text-violet-600 dark:text-violet-300 sm:text-sm">
+            <div className="nv-surface mt-6 rounded-xl p-4 sm:p-5">
+                <p className="nv-kicker">
                     جمع‌بندی ساده
                 </p>
 
@@ -187,8 +187,8 @@ export function AIAdviceCard({
             </div>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.045] p-4 sm:p-5">
-                    <h3 className="flex items-center gap-2 text-sm font-black text-rose-700 dark:text-rose-300 sm:text-base">
+                <div className="nv-status-danger rounded-xl p-4 sm:p-5">
+                    <h3 className="flex items-center gap-2 text-sm font-black sm:text-base">
                         <ShieldAlert className="h-5 w-5 shrink-0" />
                         ریسک‌های مهم
                     </h3>
@@ -200,7 +200,7 @@ export function AIAdviceCard({
                                     key={risk}
                                     className="flex items-start gap-3"
                                 >
-                                    <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-rose-500" />
+                                    <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-[var(--nv-danger)]" />
                                     <span>{risk}</span>
                                 </li>
                             ))}
@@ -212,8 +212,8 @@ export function AIAdviceCard({
                     )}
                 </div>
 
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.045] p-4 sm:p-5">
-                    <h3 className="flex items-center gap-2 text-sm font-black text-cyan-700 dark:text-cyan-300 sm:text-base">
+                <div className="nv-status-info rounded-xl p-4 sm:p-5">
+                    <h3 className="flex items-center gap-2 text-sm font-black sm:text-base">
                         <CheckCircle2 className="h-5 w-5 shrink-0" />
                         چه چیزی تحلیل را تأیید می‌کند؟
                     </h3>
@@ -225,7 +225,7 @@ export function AIAdviceCard({
                                     key={condition}
                                     className="flex items-start gap-3"
                                 >
-                                    <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-cyan-500" />
+                                    <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-[var(--nv-accent)]" />
                                     <span>{condition}</span>
                                 </li>
                             ))}
@@ -240,8 +240,8 @@ export function AIAdviceCard({
 
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 {advice.invalidation_note ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.045] p-4 text-sm leading-8 text-[var(--nv-text-soft)] sm:p-5 sm:text-base">
-                        <strong className="block text-sm font-black text-amber-800 dark:text-amber-300 sm:text-base">
+                    <div className="nv-status-warning rounded-xl p-4 text-sm leading-8 sm:p-5 sm:text-base">
+                        <strong className="block text-sm font-black sm:text-base">
                             چه زمانی این سناریو باطل می‌شود؟
                         </strong>
 
@@ -264,7 +264,7 @@ export function AIAdviceCard({
                 ) : null}
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 border-t border-violet-500/15 pt-4 text-xs text-[var(--nv-muted)] sm:flex-row sm:flex-wrap sm:items-center sm:text-sm">
+            <div className="mt-6 flex flex-col gap-3 border-t border-[var(--nv-border)] pt-4 text-xs text-[var(--nv-muted)] sm:flex-row sm:flex-wrap sm:items-center sm:text-sm">
                 <span className="flex items-center gap-1.5">
                     <Clock3 className="h-4 w-4 shrink-0" />
                     زمان تحلیل:
@@ -274,9 +274,9 @@ export function AIAdviceCard({
                     )}
                 </span>
 
-                <span dir="ltr">
-                    Model: {advice.model || '—'}
-                </span>
+                <span>
+                 تهیه‌شده توسط موتور تحلیل هوشمند بازارا
+               </span>
 
                 {advice.reused ? (
                     <span>

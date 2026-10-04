@@ -7,7 +7,6 @@ import { AlertTriangle, ArrowLeft, BrainCircuit, Loader2, Radar } from 'lucide-r
 
 import { iranMarketApi } from '../api/client';
 import {
-  useCompositeAnalysis,
   useIranMarketAssets,
   useIranMarketOverview,
   useIranMarketPriceHistory,
@@ -16,7 +15,10 @@ import { iranMarketKeys } from '../api/query-keys';
 import { MarketChart } from './market-chart';
 import { MarketHeader } from './market-header';
 import { MarketTicker } from './market-ticker';
+import { MarketAnalysisCard } from './market-analysis-card';
+import { StockOpportunityCard } from './stock-opportunity-card';
 import { OverviewCards } from './overview-cards';
+import { useCurrentSmartPortfolio } from '@/features/smart-portfolio/hooks/use-smart-portfolio';
 
 const FEATURED_SYMBOLS = [
   'IR_USD',
@@ -33,6 +35,7 @@ export function IranMarketDashboard() {
 
   const assetsQuery = useIranMarketAssets({ limit: 100 });
   const overviewQuery = useIranMarketOverview();
+  const smartPortfolioQuery = useCurrentSmartPortfolio();
   const featuredAssetQueries = useQueries({
     queries: FEATURED_SYMBOLS.map((symbol) => ({
       queryKey: iranMarketKeys.asset(symbol),
@@ -43,11 +46,18 @@ export function IranMarketDashboard() {
       retry: 1,
     })),
   });
+  const featuredAnalysisQueries = useQueries({
+    queries: FEATURED_SYMBOLS.map((symbol) => ({
+      queryKey: iranMarketKeys.analysis(symbol),
+      queryFn: () => iranMarketApi.getCompositeAnalysis(symbol),
+      staleTime: 5 * 60_000,
+      retry: false,
+    })),
+  });
   const historyQuery = useIranMarketPriceHistory({
     symbol: selectedSymbol,
     limit: 100,
   });
-  const analysisQuery = useCompositeAnalysis(selectedSymbol);
 
   const assets = useMemo(() => assetsQuery.data ?? [], [assetsQuery.data]);
   const featuredAssets = featuredAssetQueries.flatMap((query) =>
@@ -56,15 +66,23 @@ export function IranMarketDashboard() {
   const selectedAsset =
     featuredAssets.find((asset) => asset.symbol === selectedSymbol) ??
     assets.find((asset) => asset.symbol === selectedSymbol);
+  const selectedAnalysis = featuredAnalysisQueries.find(
+    (_, index) => FEATURED_SYMBOLS[index] === selectedSymbol,
+  )?.data;
+  const suggestedStocks = (smartPortfolioQuery.data?.portfolio?.items ?? []).filter(
+    (item) =>
+      item.market === 'iran' &&
+      item.allocation_type === 'capital' &&
+      item.symbol.startsWith('IR_TSE_'),
+  );
+  const hasFeaturedAnalysis = featuredAnalysisQueries.some(
+    (query) => Boolean(query.data) || query.isLoading,
+  );
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: iranMarketKeys.assets() }),
-        queryClient.invalidateQueries({ queryKey: iranMarketKeys.overview() }),
-        queryClient.invalidateQueries({ queryKey: iranMarketKeys.prices() }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: iranMarketKeys.all });
     } finally {
       setIsRefreshing(false);
     }
@@ -76,25 +94,20 @@ export function IranMarketDashboard() {
   const hasPageError = assetsQuery.isError && !assetsQuery.data;
 
   return (
-    <div dir="rtl" className="nv-page">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-cyan-500/[0.055] blur-3xl" />
-        <div className="absolute -left-44 top-1/3 h-[430px] w-[430px] rounded-full bg-blue-600/[0.045] blur-3xl" />
-      </div>
-
+    <div dir="rtl" className="nv-page nv-mobile-safe">
       <MarketHeader isRefreshing={isRefreshing} onRefresh={handleRefresh} />
 
       {initialLoading ? (
         <div className="relative flex min-h-[70vh] items-center justify-center">
           <div className="text-center">
-            <Loader2 className="mx-auto h-9 w-9 animate-spin text-cyan-300" />
+            <Loader2 className="mx-auto h-9 w-9 animate-spin text-[var(--nv-accent)]" />
             <p className="mt-4 text-sm text-[var(--nv-muted)]">در حال دریافت وضعیت بازار ایران...</p>
           </div>
         </div>
       ) : hasPageError ? (
         <main className="relative mx-auto max-w-xl px-3 py-20 text-center sm:px-6 sm:py-24">
-          <div className="rounded-3xl border border-rose-400/20 bg-rose-400/[0.06] p-8">
-            <AlertTriangle className="mx-auto h-9 w-9 text-rose-300" />
+          <div className="nv-status-danger rounded-2xl p-8">
+            <AlertTriangle className="mx-auto h-9 w-9" />
             <h2 className="mt-4 font-black text-[var(--nv-text)]">ارتباط با بازار ایران برقرار نشد</h2>
             <p className="mt-2 text-sm leading-7 text-[var(--nv-muted)]">
               بک‌اند Django، توکن ورود و مقدار NEXT_PUBLIC_API_URL را بررسی کنید.
@@ -102,7 +115,7 @@ export function IranMarketDashboard() {
             <button
               type="button"
               onClick={handleRefresh}
-              className="mt-6 rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-black text-slate-950"
+              className="nv-button-primary mt-6"
             >
               تلاش دوباره
             </button>
@@ -119,7 +132,7 @@ export function IranMarketDashboard() {
           <main className="relative mx-auto max-w-[1440px] px-3 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
             <div className="mb-6 flex flex-col gap-5 sm:mb-7 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 text-xs font-bold text-cyan-600 dark:text-cyan-300">
+                <div className="nv-kicker flex items-center gap-2">
                   <Radar className="h-4 w-4" />
                   مرکز پایش بازار ایران
                 </div>
@@ -133,7 +146,7 @@ export function IranMarketDashboard() {
               </div>
               <Link
                 href="/iran-market/advisor"
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-5 py-3 text-sm font-black text-cyan-700 transition hover:bg-cyan-500/15 sm:w-auto dark:text-cyan-200"
+                className="nv-button-primary w-full sm:w-auto"
               >
                 <BrainCircuit className="h-4 w-4" />
                 ورود به مشاور هوشمند
@@ -147,7 +160,7 @@ export function IranMarketDashboard() {
             />
 
             {overviewQuery.isError ? (
-              <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/[0.07] px-4 py-3 text-sm leading-7 text-amber-800 dark:text-amber-200">
+              <div className="nv-status-warning mt-4 rounded-xl px-4 py-3 text-sm leading-7">
                 اطلاعات overview دریافت نشد؛ قیمت‌ها و نمودار همچنان قابل استفاده‌اند.
               </div>
             ) : null}
@@ -156,10 +169,60 @@ export function IranMarketDashboard() {
               <MarketChart
                 asset={selectedAsset}
                 prices={historyQuery.data ?? []}
-                analysis={analysisQuery.data}
+                analysis={selectedAnalysis}
                 isLoading={historyQuery.isLoading || historyQuery.isFetching}
               />
             </div>
+
+            {hasFeaturedAnalysis ? (
+            <section className="mt-7">
+              <div className="mb-4">
+                <h2 className="text-xl font-black text-[var(--nv-text)]">
+                  وضعیت تحلیلی دارایی‌های اصلی
+                </h2>
+                <p className="mt-1 max-w-3xl text-sm leading-7 text-[var(--nv-muted)]">
+                  فقط دارایی‌هایی نمایش داده می‌شوند که تحلیل آن‌ها از بک‌اند
+                  دریافت شده باشد. این بخش درصد تخصیص سرمایه نشان نمی‌دهد.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {FEATURED_SYMBOLS.flatMap((symbol, index) => {
+                  const analysisQuery = featuredAnalysisQueries[index];
+                  if (!analysisQuery?.data && !analysisQuery?.isLoading) return [];
+                  return [
+                    <MarketAnalysisCard
+                      key={symbol}
+                      asset={featuredAssetQueries[index]?.data}
+                      analysis={analysisQuery.data}
+                      isLoading={analysisQuery.isLoading}
+                      selected={selectedSymbol === symbol}
+                      onSelect={setSelectedSymbol}
+                    />,
+                  ];
+                })}
+              </div>
+            </section>
+            ) : null}
+
+            {suggestedStocks.length ? (
+              <section className="mt-8">
+                <div className="mb-4">
+                  <h2 className="text-xl font-black text-[var(--nv-text)]">
+                    سهام منتخب برای بررسی
+                  </h2>
+                  <p className="mt-1 max-w-3xl text-sm leading-7 text-[var(--nv-muted)]">
+                    هر سهمی که از فیلتر تحلیل و ریسک سبد ترکیبی عبور کند، اینجا
+                    نیز به‌صورت کارت تحلیلی و بدون درصد تخصیص نمایش داده می‌شود.
+                  </p>
+                </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {suggestedStocks.map((item) => (
+                    <StockOpportunityCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </main>
         </>
       )}

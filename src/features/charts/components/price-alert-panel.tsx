@@ -68,12 +68,12 @@ export function PriceAlertPanel({
     >
       <section
         dir="rtl"
-        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-[28px] border border-[var(--nv-border)] bg-[var(--nv-panel-raised)] p-5 shadow-2xl sm:p-6"
+        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--nv-border)] bg-[var(--nv-panel-raised)] p-5 shadow-[var(--nv-shadow-raised)] sm:p-6"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-base font-black text-[var(--nv-text)]">
-              <BellRing className="h-5 w-5 text-amber-500" />
+              <BellRing className="h-5 w-5 text-[var(--nv-warning)]" />
               هشدار قیمت {instrumentName}
             </div>
             <p className="mt-2 text-xs leading-6 text-[var(--nv-muted)]">
@@ -83,7 +83,7 @@ export function PriceAlertPanel({
           <button
             type="button"
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--nv-border)] text-[var(--nv-muted)]"
+            className="nv-icon-button h-9 w-9 rounded-xl"
             aria-label="بستن"
           >
             <X className="h-4 w-4" />
@@ -96,7 +96,7 @@ export function PriceAlertPanel({
             onChange={(event) =>
               setDirection(event.target.value as PriceAlertDirection)
             }
-            className="h-11 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-3 text-xs font-bold outline-none"
+            className="nv-field h-11 rounded-xl px-3 text-xs font-bold"
           >
             <option value="above">رسیدن یا عبور به بالا</option>
             <option value="below">رسیدن یا عبور به پایین</option>
@@ -107,17 +107,21 @@ export function PriceAlertPanel({
             value={target}
             onChange={(event) => setTarget(event.target.value)}
             placeholder="Target price"
-            className="h-11 min-w-0 rounded-xl border border-[var(--nv-border)] bg-[var(--nv-soft)] px-3 text-left text-sm font-bold outline-none focus:border-amber-500/50"
+            className="nv-field h-11 min-w-0 rounded-xl px-3 text-left text-sm font-bold"
           />
           <button
             type="button"
             onClick={handleSubmit}
-            className="h-11 rounded-xl bg-amber-500 px-4 text-xs font-black text-slate-950"
+            className="nv-button-primary h-11 rounded-xl px-4 text-xs"
           >
             افزودن
           </button>
         </div>
-        {error ? <p className="mt-2 text-xs text-rose-500">{error}</p> : null}
+        {error ? (
+          <p className="nv-status-danger mt-2 rounded-lg px-3 py-2 text-xs">
+            {error}
+          </p>
+        ) : null}
 
         <div className="mt-5 space-y-2">
           {alerts.length === 0 ? (
@@ -132,7 +136,9 @@ export function PriceAlertPanel({
               >
                 <span
                   className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                    alert.active ? 'bg-emerald-500' : 'bg-amber-500'
+                    alert.active
+                      ? 'bg-[var(--nv-positive)]'
+                      : 'bg-[var(--nv-warning)]'
                   }`}
                 />
                 <div className="min-w-0 flex-1">
@@ -149,7 +155,7 @@ export function PriceAlertPanel({
                     type="button"
                     title="فعال‌سازی مجدد"
                     onClick={() => onRearm(alert.id)}
-                    className="grid h-8 w-8 place-items-center rounded-lg text-cyan-500 hover:bg-cyan-500/10"
+                    className="grid h-8 w-8 place-items-center rounded-lg text-[var(--nv-accent)] hover:bg-[var(--nv-accent-soft)]"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                   </button>
@@ -158,7 +164,7 @@ export function PriceAlertPanel({
                   type="button"
                   title="حذف هشدار"
                   onClick={() => onRemove(alert.id)}
-                  className="grid h-8 w-8 place-items-center rounded-lg text-rose-500 hover:bg-rose-500/10"
+                  className="grid h-8 w-8 place-items-center rounded-lg text-[var(--nv-danger)] hover:bg-[var(--nv-danger-soft)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

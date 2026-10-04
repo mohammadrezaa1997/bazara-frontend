@@ -77,7 +77,7 @@ export const drawingColors: Record<ChartDrawingTool, string> = {
   fibonacci: '#f59e0b',
   rectangle: '#06b6d4',
   brush: '#e879f9',
-  text: '#f8fafc',
+  text: '#38bdf8',
   measure: '#10b981',
 };
 
