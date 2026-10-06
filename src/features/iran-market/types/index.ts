@@ -115,6 +115,13 @@ export interface IranMarketAnalysis {
   analyzed_at: string;
   valid_until: string;
   is_valid?: boolean;
+  freshness?: {
+    state: string;
+    is_fresh: boolean;
+    requires_refresh: boolean;
+    age_seconds: number | null;
+    expires_in_seconds: number | null;
+  };
 }
 
 export interface IranMarketCompositeAnalysisResponse {

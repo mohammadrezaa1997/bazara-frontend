@@ -8,6 +8,8 @@ import {
   Target,
 } from 'lucide-react';
 
+import { FreshnessNotice } from '@/components/data/freshness-notice';
+import { resolveFreshness } from '@/lib/freshness';
 import type {
   ForexAnalysis,
   ForexTimeframe,
@@ -83,6 +85,11 @@ export function AnalysisPanel({
 
   const timeframeIndicators =
     analysis.indicators?.timeframes?.[timeframe];
+  const freshness = resolveFreshness({
+    isValid: analysis.is_valid,
+    validUntil: analysis.valid_until,
+    freshness: analysis.freshness,
+  });
 
   return (
     <aside className="space-y-4">
@@ -100,11 +107,21 @@ export function AnalysisPanel({
 
           <span
             className={`rounded-xl border px-3 py-2 text-sm font-black ${
-              decisionStyles[analysis.decision]
+              freshness.isFresh
+                ? decisionStyles[analysis.decision]
+                : 'nv-status-warning'
             }`}
           >
-            {analysis.decision_display}
+            {freshness.isFresh ? analysis.decision_display : 'منقضی'}
           </span>
+        </div>
+
+        <div className="mt-4">
+          <FreshnessNotice
+            freshness={freshness}
+            analyzedAt={analysis.analyzed_at}
+            compact
+          />
         </div>
 
         <p className="mt-4 text-sm leading-7 text-[var(--nv-text-soft)]">
@@ -202,7 +219,7 @@ export function AnalysisPanel({
           برنامه معامله
         </div>
 
-        {analysis.is_trade_ready ? (
+        {freshness.isFresh && analysis.is_trade_ready ? (
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <div className="nv-status-info rounded-xl p-3">
               <div className="text-[var(--nv-muted)]">
@@ -252,8 +269,9 @@ export function AnalysisPanel({
         ) : (
           <div className="nv-status-warning mt-4 flex gap-2 rounded-xl p-3 text-sm leading-7">
             <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
-            تا زمان تکمیل هم‌راستایی و کنترل ریسک، نقطه
-            ورود قطعی نمایش داده نمی‌شود.
+            {freshness.isFresh
+              ? 'تا زمان تکمیل هم‌راستایی و کنترل ریسک، نقطه ورود قطعی نمایش داده نمی‌شود.'
+              : 'اعتبار این تحلیل پایان یافته است؛ سطوح معامله تا اجرای تحلیل تازه پنهان می‌مانند.'}
           </div>
         )}
       </section>

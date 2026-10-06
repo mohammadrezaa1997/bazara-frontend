@@ -1,5 +1,7 @@
 import { AlertTriangle, BarChart3, CheckCircle2, Clock3, ShieldAlert } from 'lucide-react';
 
+import { FreshnessNotice } from '@/components/data/freshness-notice';
+import { resolveFreshness } from '@/lib/freshness';
 import type { IranMarketAnalysis, IranMarketAsset } from '../types';
 import { formatPrice, unitLabel } from '../utils/formatters';
 
@@ -47,6 +49,13 @@ export function MarketAnalysisCard({
   onSelect,
 }: MarketAnalysisCardProps) {
   const quality = analysis?.indicators?.composite?.data_quality_score;
+  const freshness = analysis
+    ? resolveFreshness({
+        isValid: analysis.is_valid,
+        validUntil: analysis.valid_until,
+        freshness: analysis.freshness,
+      })
+    : null;
 
   return (
     <button
@@ -70,8 +79,8 @@ export function MarketAnalysisCard({
         </div>
         {analysis ? (
           <span className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-black ${recommendationTone(analysis.recommendation)}`}>
-            {analysis.is_valid === false
-              ? 'نیازمند به‌روزرسانی'
+            {!freshness?.isFresh
+              ? 'تحلیل منقضی'
               : recommendationLabels[analysis.recommendation] ?? analysis.recommendation}
           </span>
         ) : null}
@@ -81,6 +90,15 @@ export function MarketAnalysisCard({
         <div className="mt-5 h-20 animate-pulse rounded-2xl bg-[var(--nv-soft)]" />
       ) : analysis ? (
         <>
+          {freshness ? (
+            <div className="mt-4">
+              <FreshnessNotice
+                freshness={freshness}
+                analyzedAt={analysis.analyzed_at}
+                compact
+              />
+            </div>
+          ) : null}
           <div className="mt-4 grid grid-cols-3 gap-2">
             <Metric label="ریسک" value={analysis.risk_score} danger={analysis.risk_score >= 70} />
             <Metric label="اطمینان" value={analysis.confidence_score} />

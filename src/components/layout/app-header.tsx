@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { BrandLogo } from '@/components/brand/brand-logo';
+import { InstallAppButton } from '@/components/pwa/install-app-button';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useAuthStore } from '@/lib/store';
 
@@ -81,6 +82,7 @@ export function AppHeader({
           </nav>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <InstallAppButton />
             <div className="hidden xl:block">
               <ThemeToggle />
             </div>

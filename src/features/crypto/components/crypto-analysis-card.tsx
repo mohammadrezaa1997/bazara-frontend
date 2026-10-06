@@ -14,6 +14,7 @@ import type { CryptoMarketCard } from '../types';
 interface CryptoAnalysisCardProps {
   card: CryptoMarketCard;
   rank: number;
+  isFresh: boolean;
 }
 
 const blockerLabels: Record<string, string> = {
@@ -76,8 +77,8 @@ function score(value?: number) {
   return Math.round(value).toLocaleString('fa-IR');
 }
 
-export function CryptoAnalysisCard({ card, rank }: CryptoAnalysisCardProps) {
-  const meta = actionMeta(card.action || 'WATCH');
+export function CryptoAnalysisCard({ card, rank, isFresh }: CryptoAnalysisCardProps) {
+  const meta = actionMeta(isFresh ? card.action || 'WATCH' : 'WATCH');
   const ActionIcon = meta.Icon;
   const targets = card.take_profit_targets ?? [];
   const blocker = card.portfolio_block_reason
@@ -102,7 +103,7 @@ export function CryptoAnalysisCard({ card, rank }: CryptoAnalysisCardProps) {
 
           <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black sm:text-sm ${meta.tone}`}>
             <ActionIcon className="h-3.5 w-3.5" />
-            {meta.label}
+            {isFresh ? meta.label : 'تحلیل منقضی'}
           </span>
         </div>
 
@@ -113,19 +114,26 @@ export function CryptoAnalysisCard({ card, rank }: CryptoAnalysisCardProps) {
           <Metric label="کیفیت داده" value={`${score(card.data_quality_score)} / ۱۰۰`} />
         </div>
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
-          <Level
-            Icon={Target}
-            label="محدوده ورود"
-            value={card.entry_price_min && card.entry_price_max ? `${formatUsd(card.entry_price_min)} تا ${formatUsd(card.entry_price_max)}` : 'فعلاً صادر نشده'}
-          />
-          <Level Icon={ShieldAlert} label="حد ضرر" value={formatUsd(card.stop_loss)} danger />
-          <Level
-            Icon={BarChart3}
-            label="اهداف"
-            value={targets.length ? targets.map(formatUsd).join(' · ') : 'فعلاً صادر نشده'}
-          />
-        </div>
+        {isFresh ? (
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <Level
+              Icon={Target}
+              label="محدوده ورود"
+              value={card.entry_price_min && card.entry_price_max ? `${formatUsd(card.entry_price_min)} تا ${formatUsd(card.entry_price_max)}` : 'فعلاً صادر نشده'}
+            />
+            <Level Icon={ShieldAlert} label="حد ضرر" value={formatUsd(card.stop_loss)} danger />
+            <Level
+              Icon={BarChart3}
+              label="اهداف"
+              value={targets.length ? targets.map(formatUsd).join(' · ') : 'فعلاً صادر نشده'}
+            />
+          </div>
+        ) : (
+          <div className="nv-status-warning mt-3 flex items-start gap-2 rounded-xl p-3 text-sm leading-7">
+            <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
+            این کارت فقط سابقهٔ تحلیلی است؛ سطوح ورود، حد ضرر و اهداف تا تحلیل تازه پنهان شده‌اند.
+          </div>
+        )}
 
         {card.selection_reason ? (
           <p className="mt-4 text-sm leading-7 text-[var(--nv-text-soft)]">
@@ -133,7 +141,7 @@ export function CryptoAnalysisCard({ card, rank }: CryptoAnalysisCardProps) {
           </p>
         ) : null}
 
-        {blocker ? (
+        {!isFresh ? null : blocker ? (
           <div className="nv-status-warning mt-4 flex items-start gap-2 rounded-xl p-3 text-sm leading-7">
             <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
             <span>{blocker} تخصیص سرمایه فقط در صفحه «سبد ترکیبی» نمایش داده می‌شود.</span>

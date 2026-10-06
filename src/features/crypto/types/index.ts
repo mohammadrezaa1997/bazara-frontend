@@ -44,6 +44,14 @@ export interface CryptoMarketReport {
   status?: string;
   message?: string;
   task_id?: string;
+  is_valid?: boolean;
+  freshness?: {
+    state: string;
+    is_fresh: boolean;
+    requires_refresh: boolean;
+    age_seconds: number | null;
+    expires_in_seconds: number | null;
+  };
   market_cards?: CryptoMarketCard[];
   portfolio_analysis?: LegacyCryptoPortfolioItem[];
   positions?: LegacyCryptoPortfolioItem[];
@@ -52,6 +60,7 @@ export interface CryptoMarketReport {
   portfolio?: {
     generated_at?: string;
     valid_until?: string | null;
+    is_valid?: boolean;
     investment_horizon?: string;
     market_cards?: CryptoMarketCard[];
     generation_metadata?: {

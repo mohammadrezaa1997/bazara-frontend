@@ -158,6 +158,13 @@ export interface ForexAnalysis {
 
   is_valid: boolean;
   is_trade_ready: boolean;
+  freshness?: {
+    state: string;
+    is_fresh: boolean;
+    requires_refresh: boolean;
+    age_seconds: number | null;
+    expires_in_seconds: number | null;
+  };
 }
 
 export interface ForexHistoryParams {

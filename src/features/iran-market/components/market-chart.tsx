@@ -7,6 +7,7 @@ import {
   type OfficialPriceLevel,
 } from '@/features/charts/components/professional-market-chart';
 import type { ChartCandle } from '@/features/charts/utils/chart-indicators';
+import { resolveFreshness } from '@/lib/freshness';
 
 import type {
   IranMarketAnalysis,
@@ -74,6 +75,12 @@ export function MarketChart({
 
   const officialLevels = useMemo<OfficialPriceLevel[]>(() => {
     if (!analysis) return [];
+    const freshness = resolveFreshness({
+      isValid: analysis.is_valid,
+      validUntil: analysis.valid_until,
+      freshness: analysis.freshness,
+    });
+    if (!freshness.isFresh) return [];
     const tradePlan = analysis.indicators?.composite?.trade_plan;
     const entryMin = toFiniteNumber(
       analysis.entry_min ??

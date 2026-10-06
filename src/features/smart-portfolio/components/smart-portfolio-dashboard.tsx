@@ -15,8 +15,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { FreshnessNotice } from '@/components/data/freshness-notice';
 import { AppHeader } from '@/components/layout/app-header';
 import { useAuthStore } from '@/lib/store';
+import { resolveFreshness } from '@/lib/freshness';
 import { AllocationChart } from './allocation-chart';
 import { PortfolioItemCard } from './portfolio-item-card';
 import { RiskComparisonChart } from './risk-comparison-chart';
@@ -52,7 +54,14 @@ export function SmartPortfolioDashboard() {
   );
   const currentQuery = useCurrentSmartPortfolio();
   const generateMutation = useGenerateSmartPortfolio();
-  const portfolio = currentQuery.data?.portfolio;
+  const storedPortfolio = currentQuery.data?.portfolio;
+  const portfolioFreshness = storedPortfolio
+    ? resolveFreshness({
+        isValid: storedPortfolio.is_valid,
+        validUntil: storedPortfolio.valid_until,
+      })
+    : null;
+  const portfolio = portfolioFreshness?.isFresh ? storedPortfolio : undefined;
 
   useEffect(() => {
     if (generateMutation.isSuccess) {
@@ -173,6 +182,14 @@ export function SmartPortfolioDashboard() {
           <section className="nv-card rounded-2xl p-8 text-center sm:p-12">
             <WalletCards className="mx-auto h-10 w-10 text-[var(--nv-accent)]" />
             <h2 className="mt-4 text-xl font-black text-[var(--nv-text)]">هنوز سبد ترکیبی معتبری وجود ندارد</h2>
+            {storedPortfolio && portfolioFreshness ? (
+              <div className="mx-auto mt-4 max-w-2xl text-right">
+                <FreshnessNotice
+                  freshness={portfolioFreshness}
+                  analyzedAt={storedPortfolio.generated_at}
+                />
+              </div>
+            ) : null}
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-8 text-[var(--nv-muted)]">
               بودجه را وارد کنید و دکمه ساخت سبد را بزنید. اگر فرصت امنی وجود نداشته باشد، سیستم به‌جای پیشنهاد اجباری، بودجه را نقد نگه می‌دارد.
             </p>

@@ -88,32 +88,7 @@ export function AIAdviceCard({
     }
 
     if (!advice) {
-        return (
-            <section className="nv-card rounded-2xl p-6 sm:p-8">
-                <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--nv-accent-border)] bg-[var(--nv-accent-soft)] text-[var(--nv-accent)]">
-                        <BrainCircuit className="h-6 w-6" />
-                    </div>
-
-                    <div>
-                        <p className="nv-kicker">
-                            مشاور تحلیلی BAZARA
-                        </p>
-
-                        <h2 className="mt-1 text-lg font-black text-[var(--nv-text)] sm:text-xl">
-                            تفسیر هوش مصنوعی
-                            <PairName value={pairName} />
-                        </h2>
-                    </div>
-                </div>
-
-                <p className="mt-5 text-sm leading-8 text-[var(--nv-muted)] sm:text-base">
-                    برای آخرین تحلیل این نماد هنوز تفسیر هوش مصنوعی
-                    ثبت نشده است. پس از اجرای تحلیل دوره‌ای، نتیجه
-                    همین‌جا نمایش داده می‌شود.
-                </p>
-            </section>
-        );
+        return null;
     }
 
     if (advice.status === 'unavailable') {

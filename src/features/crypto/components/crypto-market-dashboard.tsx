@@ -18,8 +18,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { FreshnessNotice } from '@/components/data/freshness-notice';
 import { AppHeader } from '@/components/layout/app-header';
 import { FinancialAssistant } from '@/features/financial-assistant/financial-assistant';
+import { resolveFreshness } from '@/lib/freshness';
 import { CryptoProfessionalChart } from './crypto-professional-chart';
 import { CryptoAnalysisCard } from './crypto-analysis-card';
 import {
@@ -81,7 +83,14 @@ export function CryptoMarketDashboard() {
     () => normalizeLegacyCards(reportQuery.data),
     [reportQuery.data],
   );
-  const actionableCount = cards.filter((card) =>
+  const reportFreshness = resolveFreshness({
+    isValid:
+      reportQuery.data?.is_valid ??
+      reportQuery.data?.portfolio?.is_valid,
+    validUntil: reportQuery.data?.portfolio?.valid_until,
+    freshness: reportQuery.data?.freshness,
+  });
+  const actionableCount = (reportFreshness.isFresh ? cards : []).filter((card) =>
     ['BUY', 'ACCUMULATE'].includes(String(card.action).toUpperCase()),
   ).length;
   const qualityValues = cards
@@ -273,6 +282,18 @@ export function CryptoMarketDashboard() {
             </button>
           </div>
 
+          {reportQuery.data && reportQuery.data.status !== 'generating' ? (
+            <div className="mb-4">
+              <FreshnessNotice
+                freshness={reportFreshness}
+                analyzedAt={
+                  reportQuery.data.portfolio?.generated_at ??
+                  reportQuery.data.generated_at
+                }
+              />
+            </div>
+          ) : null}
+
           {reportQuery.isLoading ||
           reportQuery.data?.status === 'generating' ? (
             <div className="nv-card flex min-h-48 items-center justify-center gap-3 rounded-2xl p-8 text-sm text-[var(--nv-muted)]">
@@ -291,6 +312,7 @@ export function CryptoMarketDashboard() {
                   key={`${card.symbol}-${index}`}
                   card={card}
                   rank={index + 1}
+                  isFresh={reportFreshness.isFresh}
                 />
               ))}
             </div>
